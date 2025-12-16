@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EMR Consultation - RM HealthCare</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- PDF Lib -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            /* Brighter Blue */
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --bg-body: #f8fafc;
+            --bg-glass: rgba(255, 255, 255, 0.95);
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+
+            --radius-md: 12px;
+            --radius-lg: 20px;
+
+            --shadow-float: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 100%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .emr-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: white;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .patient-card-mini {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .p-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+        }
+
+        .p-info {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 2px;
+        }
+
+        /* LAYOUT */
+        .emr-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            flex: 1;
+            overflow: hidden;
+            gap: 0;
+        }
+
+        .col-left,
+        .col-right {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(5px);
+            padding: 24px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .col-right {
+            border-right: none;
+            border-left: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .col-center {
+            padding: 32px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* PANELS */
+        .panel {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: var(--shadow-float);
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: transform 0.2s;
+        }
+
+        .panel-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* INPUTS */
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #f8fafc;
+            color: #1e293b;
+            transition: all 0.2s;
+        }
+
+        .form-control:hover {
+            background: #fff;
+            border-color: #cbd5e1;
+        }
+
+        .form-control:focus {
+            background: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        /* BUTTONS */
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-outline:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* MEDICATION TABLE */
+        .med-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+        }
+
+        .med-row:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .med-row input {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #334155;
+            transition: all 0.2s;
+        }
+
+        .med-row input::placeholder {
+            color: #94a3b8;
+        }
+
+        .med-row input:focus {
+            background: white;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* VITALS */
+        .vital-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .vital-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .vital-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+            border-color: var(--accent);
+        }
+
+        .vital-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        /* VITAL INPUT */
+        .vital-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: center;
+            padding: 0;
+            outline: none;
+        }
+
+        .vital-input:focus {
+            color: var(--accent);
+        }
+
+        .vital-input::placeholder {
+            color: #e2e8f0;
+            font-weight: 400;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-yellow {
+            background: #fefce8;
+            color: #a16207;
+            border: 1px solid #fef08a;
+        }
+
+        .ai-result {
+            animation: slideDown 0.3s ease-out;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .history-item {
+            padding: 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        /* TEST ROW */
+        .test-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            margin-bottom: 8px;
+            align-items: center;
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .test-row:focus-within {
+            background: white;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .test-row input {
+            background: transparent;
+            border: none;
+            width: 100%;
+            font-size: 13px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- STICKY HEADER -->
+    <header class="emr-header">
+        <div class="header-left">
+            <a href="doctor_dashboard.html" class="back-btn" title="Back to Dashboard">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div class="patient-card-mini">
+                <div class="p-name" id="headerName">Loading...</div>
+                <div class="p-info" id="headerInfo">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div id="visitTimer" style="font-size:14px; font-weight:700; color:#64748b; font-feature-settings: 'tnum';">
+                00:00</div>
+            <button class="btn-outline" onclick="downloadPrescriptionPDF()"><i class="fa-solid fa-print"></i>
+                PDF</button>
+            <button class="btn-primary" id="saveRxBtn"><i class="fa-solid fa-check"></i> Finish</button>
+        </div>
+    </header>
+
+    <!-- 3-COL LAYOUT -->
+    <div class="emr-container">
+
+        <!-- LEFT: VISITS HISTORY -->
+        <aside class="col-left">
+            <div class="panel-header">
+                Past Visits
+                <i class="fa-solid fa-clock-rotate-left" style="color:var(--text-muted)"></i>
+            </div>
+            <div id="historyList">
+                <div style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Fetching
+                    history...</div>
+            </div>
+        </aside>
+
+        <!-- CENTER: MAIN PRESCRIPTION -->
+        <main class="col-center">
+
+            <div class="panel">
+                <div class="panel-header">Clinical Details</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div>
+                        <label class="form-label">Chief Complaint</label>
+                        <input type="text" class="form-control" id="rxComplaint"
+                            placeholder="e.g. High fever, chills...">
+                    </div>
+                    <div>
+                        <label class="form-label">Provisional Diagnosis</label>
+                        <input type="text" class="form-control" id="rxDiagnosis" placeholder="e.g. Viral Pyrexia">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Clinical Findings</label>
+                    <textarea class="form-control" id="rxFindings" style="height:60px;"
+                        placeholder="Chest clear, throat congested..."></textarea>
+                </div>
+            </div>
+
+            <!-- LABS (Moved) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>Lab Investigations</span>
+                    <button class="btn-outline" style="font-size:11px; padding:4px 10px;" id="addTestBtn"><i
+                            class="fa-solid fa-plus"></i> Add</button>
+                </div>
+                <div id="testsContainer">
+                    <!-- Dynamic Rows -->
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span>Medicines</span>
+                    <button class="btn-outline" style="font-size:11px; padding:4px 10px;" id="addMedicineBtn"><i
+                            class="fa-solid fa-plus"></i> Add Drug</button>
+                </div>
+
+                <div class="med-row"
+                    style="margin-bottom:12px; padding-bottom:4px; border-bottom:1px solid #f1f5f9; font-size:11px; font-weight:700; color:var(--text-muted);">
+                    <div>DRUG NAME</div>
+                    <div>DOSE</div>
+                    <div>FREQ</div>
+                    <div>DUR</div>
+                    <div>INSTR</div>
+                    <div></div>
+                </div>
+                <div id="medicinesContainer">
+                    <!-- Dynamic Rows -->
+                </div>
+            </div>
+
+            <div class="panel">
+                <label class="form-label">Advice / Diet</label>
+                <div style="position:relative;">
+                    <textarea class="form-control" id="rxAdvice" style="height:80px;"
+                        placeholder="Rest, warm water..."></textarea>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RIGHT: TOOLS & VITALS -->
+        <aside class="col-right">
+
+            <!-- VITALS CURRENT -->
+            <div style="margin-bottom:24px;">
+                <div class="panel-header">Vitals (Triage)</div>
+                <div class="vital-grid">
+                    <div class="vital-item">
+                        <div class="vital-lbl">BP (mmHg)</div>
+                        <input type="text" class="vital-input" id="vitalBP" placeholder="-">
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-lbl">Pulse (bpm)</div>
+                        <input type="text" class="vital-input" id="vitalPulse" placeholder="-">
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-lbl">SpO2 (%)</div>
+                        <input type="text" class="vital-input" id="vitalSpo2" placeholder="-">
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-lbl">Temp (°F)</div>
+                        <input type="text" class="vital-input" id="vitalTemp" placeholder="-">
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- FOLLOW UP -->
+            <div style="margin-bottom:24px;">
+                <div class="panel-header">Follow Up</div>
+                <div style="margin-bottom:12px;">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" id="rxFollowupDate">
+                </div>
+                <div>
+                    <label class="form-label">Note</label>
+                    <input type="text" class="form-control" id="rxFollowupNote" placeholder="If symptoms persist...">
+                </div>
+            </div>
+
+            <!-- AI ASSIST -->
+            <div style="margin-bottom:24px;">
+                <div class="panel-header">
+                    AI Assistant
+                    <i class="fa-solid fa-robot" style="color:var(--accent)"></i>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" class="form-control" id="aiDietInput" placeholder="Ask AI..."
+                        style="font-size:12px;" onkeydown="if(event.key === 'Enter') runDietSearch()">
+                    <button class="btn-primary" style="padding:0 12px;" onclick="runDietSearch()"><i
+                            class="fa-solid fa-paper-plane"></i></button>
+                </div>
+                <div id="aiDietResults" class="ai-result hidden">
+                    <!-- Results -->
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // 1. STATE & AUTH
+        let currentDoctor = null;
+        let pData = null; // Patient Data
+
+        function checkAuth() {
+            const token = sessionStorage.getItem('doctor_token');
+            const info = sessionStorage.getItem('doctor_info');
+            const pSession = sessionStorage.getItem('current_patient');
+
+            if (!token || !info) {
+                location.href = '/doctor_login';
+                return false;
+            }
+            if (!pSession) {
+                alert("No patient selected! Redirecting to dashboard...");
+                location.href = 'doctor_dashboard.html';
+                return false;
+            }
+
+            currentDoctor = JSON.parse(info);
+            pData = JSON.parse(pSession);
+            return true;
+        }
+
+        // 2. INIT
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+
+            // Render Header Info
+            document.getElementById('headerName').textContent = pData.name;
+            document.getElementById('headerInfo').innerHTML = `
+                 <span class="badge badge-yellow">ID: ${pData.pat_num || pData.id}</span>
+                 <span>•</span>
+                 <span>${pData.age} Yrs</span>
+                 <span>•</span>
+                 <span>${pData.sex}</span>
+                 <span>•</span>
+                 <span><i class="fa-solid fa-phone" style="font-size:10px"></i> ${pData.phone}</span>
+             `;
+
+            // Render Vitals
+            document.getElementById('vitalBP').value = pData.bp || '';
+            document.getElementById('vitalPulse').value = pData.pulse || '';
+            document.getElementById('vitalSpo2').value = pData.spo2 || '';
+            document.getElementById('vitalTemp').value = pData.temp || '';
+
+            // Prefill knowns
+            document.getElementById('rxComplaint').value = pData.complaints !== '—' ? pData.complaints : '';
+
+            // Load History
+            await loadHistory();
+
+            // Init Meds & Tests
+            addMedicineRow();
+            addTestRow();
+
+            // Start timer
+            startTimer();
+        });
+
+        // 3. LOGIC
+
+        // --- Timer ---
+        let seconds = 0;
+        function startTimer() {
+            setInterval(() => {
+                seconds++;
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                document.getElementById('visitTimer').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        // --- History ---
+        async function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            try {
+                // Use pat_id or phone from pData
+                const identifier = pData.pat_id || pData.phone;
+                const res = await fetch(`/api/doctor/patient-history?patient_phone=${identifier}`);
+                const data = await res.json();
+
+                historyList.innerHTML = "";
+                if (!data.history || data.history.length === 0) {
+                    historyList.innerHTML = '<div style="text-align:center; font-size:12px; color:var(--text-muted); padding:20px;">No past visits.</div>';
+                    return;
+                }
+
+                data.history.forEach(h => {
+                    // Skip current session if it appears (rare since we are just creating it)
+                    if (h.id === pData.id && h.status !== 'Completed') return;
+
+                    const dateStr = h.appointment_date ? h.appointment_date.split('T')[0] : 'Unknown Date';
+                    const el = document.createElement('div');
+                    el.className = 'history-item';
+                    el.innerHTML = `
+                        <div class="history-date">${dateStr}</div>
+                        <div class="history-diag">${h.diagnosis || 'Consultation'}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                            Dr. ${h.doctor_name || 'Unknown'}
+                        </div>
+                    `;
+                    // On click we could show details? For now just static list
+                    historyList.appendChild(el);
+                });
+            } catch (e) {
+                console.error(e);
+                historyList.innerHTML = '<div style="color:red; font-size:12px;">Error loading history</div>';
+            }
+        }
+
+        // --- Medicines ---
+        const medicinesContainer = document.getElementById("medicinesContainer");
+        document.getElementById("addMedicineBtn").addEventListener("click", addMedicineRow);
+
+        function addMedicineRow() {
+            const row = document.createElement("div");
+            row.className = "med-row";
+            row.innerHTML = `
+              <input type="text" class="med-name" placeholder="Name" />
+              <input type="text" class="med-dose" placeholder="Dose" />
+              <input type="text" class="med-freq" placeholder="Freq" />
+              <input type="text" class="med-dur" placeholder="Dur" />
+              <input type="text" class="med-instr" placeholder="Instr" />
+              <button type="button" class="btn-remove">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            `;
+            row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
+            row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
+            medicinesContainer.appendChild(row);
+        }
+
+        // --- Tests ---
+        const testsContainer = document.getElementById("testsContainer");
+        document.getElementById("addTestBtn").addEventListener("click", () => addTestRow());
+
+        function addTestRow(val = "") {
+            const row = document.createElement("div");
+            row.className = "test-row";
+            row.innerHTML = `
+              <input type="text" class="test-name" placeholder="Test Name (e.g. CBC, X-Ray)" value="${val}" />
+              <button type="button" class="btn-remove">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            `;
+            row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
+            testsContainer.appendChild(row);
+            // Focus if adding new blank
+            if (!val) {
+                const inp = row.querySelector('input');
+                if (inp) setTimeout(() => inp.focus(), 50);
+            }
+        }
+
+        // --- AI ---
+        const dietDB = {
+            "diabetes": "Avoid sugar, white rice. Eat brown rice, oats, salads.",
+            "hypertension": "Low salt. Avoid pickles/papad. Eat fruits/veggies.",
+            "fever": "Plenty of fluids. Light home-cooked food.",
+            "cough": "Warm water, ginger tea, honey. Avoid cold drinks.",
+            "general": "Balanced diet. Drink 3-4L water daily."
+        };
+        async function runDietSearch() {
+            const input = document.getElementById('aiDietInput');
+            const resBox = document.getElementById('aiDietResults');
+            const q = input.value.toLowerCase();
+            if (!q) return;
+
+            resBox.classList.remove('hidden');
+            resBox.innerHTML = 'Thinking...';
+
+            setTimeout(() => {
+                let found = null;
+                for (const [key, val] of Object.entries(dietDB)) {
+                    if (q.includes(key) || key.includes(q)) { found = val; break; }
+                }
+                if (found) {
+                    resBox.innerHTML = `<div style="font-size:12px; color:#1e3a8a;"><strong>Suggestion:</strong> ${found} <br><a href="#" onclick="appendAdvice('${found}')" style="color:var(--accent)">Add to Advice</a></div>`;
+                } else {
+                    resBox.innerHTML = `<div style="font-size:12px; color:#1e3a8a;"><strong>General:</strong> Eat fresh food. <br><a href="#" onclick="appendAdvice('Eat fresh food.')" style="color:var(--accent)">Add</a></div>`;
+                }
+            }, 500);
+        }
+        window.appendAdvice = (txt) => {
+            const area = document.getElementById('rxAdvice');
+            area.value = area.value ? area.value + " " + txt : txt;
+        };
+
+        // --- Save ---
+        document.getElementById('saveRxBtn').addEventListener("click", async () => {
+            const btn = document.getElementById('saveRxBtn');
+            btn.innerHTML = 'Saving...';
+            btn.disabled = true;
+
+            // Collect Meds
+            const meds = [];
+            document.querySelectorAll('.med-row').forEach(r => {
+                const name = r.querySelector('.med-name').value;
+                if (name) {
+                    meds.push({
+                        name,
+                        dose: r.querySelector('.med-dose').value,
+                        freq: r.querySelector('.med-freq').value,
+                        dur: r.querySelector('.med-dur').value,
+                        instr: r.querySelector('.med-instr').value
+                    });
+                }
+            });
+
+            // Payload
+            const payload = {
+                id: pData.id,
+                doctor_id: currentDoctor.id,
+                doctor_name: currentDoctor.name,
+                symptoms: document.getElementById('rxComplaint').value,
+                diagnosis: document.getElementById('rxDiagnosis').value,
+                medicines: meds,
+                lab_tests: Array.from(document.querySelectorAll('.test-name')).map(i => i.value.trim()).filter(x => x).join(', '),
+                advice: document.getElementById('rxAdvice').value,
+                follow_up_date: document.getElementById('rxFollowupDate').value || null,
+                vital_bp: document.getElementById('vitalBP').value || null,
+                vital_pulse: document.getElementById('vitalPulse').value || null,
+                vital_spo2: document.getElementById('vitalSpo2').value || null,
+                vital_temp: document.getElementById('vitalTemp').value || null
+            };
+
+            console.log("Sending payload:", payload);
+
+            try {
+                const res = await fetch('/api/doctor/prescribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Server Error (${res.status}): ${txt}`);
+                }
+
+                const json = await res.json();
+
+                if (json.success) {
+                    alert('Prescription Saved Successfully!');
+                    location.href = 'doctor_dashboard.html';
+                } else {
+                    throw new Error(json.error || 'Unknown Error');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to Save: ' + e.message);
+                btn.innerHTML = '<i class="fa-solid fa-save"></i> Save & Finish';
+                btn.disabled = false;
+            }
+        });
+
+        // --- PDF ---
+        // Basic Shim reuse logic
+        function downloadPrescriptionPDF() {
+            // In a real app we'd reuse the robust PDF generation logic 
+            // from dashboard or put it in a shared JS file.
+            // For now, alerting placeholder or basic logic.
+            alert("PDF Generation available after saving! (Or migrated logic needed)");
+        }
+
+    </script>
+</body>
+
+</html>

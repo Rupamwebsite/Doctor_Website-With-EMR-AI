@@ -5,145 +5,160 @@
     <meta charset="UTF-8" />
     <title>Doctor Dashboard - Messages</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-soft: #e0ecff;
-            --bg: #f3f4f6;
-            --white: #ffffff;
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
+            /* Palette: Slate & Blue */
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-soft: #eff6ff;
+
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+
+            --success: #10b981;
+            --warning: #f59e0b;
             --danger: #ef4444;
-            --success: #16a34a;
-            --radius-lg: 18px;
-            --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: "Poppins", sans-serif;
+            outline: none;
         }
 
         body {
-            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
             color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .layout {
+        /* --- LAYOUT --- */
+        .app-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
+            width: 100vw;
         }
 
+        /* --- SIDEBAR --- */
         .sidebar {
             width: 260px;
-            background: #020617;
-            color: #e5e7eb;
+            background-color: var(--primary);
+            color: white;
             display: flex;
             flex-direction: column;
-            padding: 20px 18px;
+            padding: 24px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
-        .sidebar-logo {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 40px;
+            padding: 0 4px;
         }
 
-        .sidebar-logo-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #38bdf8);
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #60a5fa);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
-        }
-
-        .sidebar-logo-text {
-            font-weight: 600;
             font-size: 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
-        .sidebar-section-title {
+        .brand-text {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-label {
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #9ca3af;
-            margin: 12px 4px;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            font-weight: 600;
+            padding-left: 12px;
         }
 
-        .sidebar-nav {
+        .nav-list {
             list-style: none;
         }
 
-        .sidebar-nav li {
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #cbd5e1;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
             margin-bottom: 4px;
         }
 
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #9ca3af;
-            text-decoration: none;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .sidebar-link i {
-            width: 18px;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .sidebar-link:hover {
-            background: #111827;
-            color: #e5e7eb;
-        }
-
-        .sidebar-link.active {
-            background: linear-gradient(135deg, #2563eb, #38bdf8);
+        .nav-item a:hover {
+            background: rgba(255, 255, 255, 0.08);
             color: white;
-            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.4);
+            transform: translateX(4px);
         }
 
-        .sidebar-bottom {
-            margin-top: auto;
-            padding-top: 12px;
-            border-top: 1px solid #111827;
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #6b7280;
+        .nav-item a.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
-        .sidebar-badge {
-            background: rgba(37, 99, 235, 0.15);
-            color: #bfdbfe;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 11px;
+        .nav-item a i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
         }
 
-        .main {
+        /* --- MAIN CONTENT --- */
+        .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 18px 20px;
             overflow-y: auto;
+            position: relative;
+            padding: 30px 40px;
         }
 
         .topbar {
@@ -238,33 +253,59 @@
 </head>
 
 <body>
-    <div class="layout">
+    <div class="app-container">
         <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div class="sidebar-logo-icon"><i class="fa-solid fa-stethoscope"></i></div>
-                <div class="sidebar-logo-text">RM HealthCare</div>
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div class="brand-text">RM Health</div>
             </div>
-            <div class="sidebar-section-title">Main</div>
-            <ul class="sidebar-nav">
-                <li><a class="sidebar-link" href="dashboard_overview.html"><i
-                            class="fa-solid fa-chart-line"></i>Dashboard</a></li>
-                <li><a class="sidebar-link" href="appointments_view.html"><i
-                            class="fa-solid fa-calendar-check"></i>Appointments</a></li>
-                <li><a class="sidebar-link" href="doctor_dashboard.html"><i class="fa-solid fa-user-group"></i>My
-                        Patients</a></li>
-                <li><a class="sidebar-link active" href="messages.html"><i
-                            class="fa-solid fa-comment-dots"></i>Messages</a></li>
-            </ul>
-            <div class="sidebar-section-title">System</div>
-            <ul class="sidebar-nav">
-                <li><a class="sidebar-link" href="settings.html"><i class="fa-solid fa-gear"></i>Settings</a></li>
-                <li><a class="sidebar-link" href="#" onclick="logout()"><i
-                            class="fa-solid fa-right-from-bracket"></i>Logout</a></li>
-            </ul>
-            <div class="sidebar-bottom"><span>Doctor Panel</span><span class="sidebar-badge">v1.0</span></div>
+
+            <div class="nav-section">
+                <div class="nav-label">Dashboard</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="dashboard_overview.html">
+                            <i class="fa-solid fa-chart-pie"></i> Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="appointments_view.html">
+                            <i class="fa-regular fa-calendar-check"></i> Appointments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="doctor_dashboard.html">
+                            <i class="fa-solid fa-user-doctor"></i> My Patients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="messages.html" class="active">
+                            <i class="fa-regular fa-envelope"></i> Messages
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Settings</div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="settings.html">
+                            <i class="fa-solid fa-sliders"></i> Preferences
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" onclick="logout()">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </aside>
 
-        <main class="main">
+        <main class="main-content">
             <div class="topbar">
                 <div class="topbar-left">
                     <h2>Messages</h2>
