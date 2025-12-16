@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Create Users — RM HealthCare</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .badge {
+      background: #e0e7ff;
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #f9fafb;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      background: #fff;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background-color: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .action-btn {
+      padding: 6px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #f3f4f6;
+      color: var(--primary);
+    }
+
+    .action-btn.delete:hover {
+      color: #ef4444;
+    }
+
+    .msg {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .msg.success {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .msg.error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .pw-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .pw-toggle-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>User Management</h1>
+        <div style="font-size:14px; color:var(--text-muted); margin-top:4px;">Create and manage system users</div>
+      </div>
+      <div class="badge">Mode: <span id="modeLabel">Local</span></div>
+    </div>
+
+    <div class="grid">
+      <!-- Left: Create Form -->
+      <div class="card">
+        <div class="card-title">Create New User</div>
+
+        <div class="form-group">
+          <label>User Type</label>
+          <select id="userType">
+            <option value="doctor">Doctor (Link to Profile)</option>
+            <option value="generic">Generic User (Staff/Admin)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="doctorSelectGroup">
+          <label>Link to Doctor Profile</label>
+          <select id="bindDoctor">
+            <option value="">-- Select Doctor --</option>
+          </select>
+        </div>
+
+        <div class="row-2">
+          <div class="form-group">
+            <label>Username</label>
+            <input id="username" placeholder="e.g. dr_smith" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Mobile</label>
+            <input id="mobile" type="tel" placeholder="e.g. +880..." autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <div class="pw-wrapper">
+            <input id="password" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+            <button id="pwShow" class="pw-toggle-btn" type="button">Show</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input id="fullname" placeholder="e.g. Dr. John Smith" autocomplete="name">
+        </div>
+
+        <div class="row-2">
+          <div class="form-group">
+            <label>Category</label>
+            <input id="userCategory" placeholder="e.g. Doctor, Reception">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="status">
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary" id="btnClear">Reset</button>
+          <button class="btn btn-primary" id="btnCreate"><i class="fa fa-plus"></i> Create User</button>
+        </div>
+
+        <div id="msg" class="msg" role="status"></div>
+      </div>
+
+      <!-- Right: User List -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <div class="card-title" style="margin-bottom:0; border:none;">User Directory</div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <label style="margin:0; font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" id="toggleAllPw" style="width:auto; margin:0;"> Show Passwords
+            </label>
+            <button id="btnReport" class="btn btn-secondary" style="padding:6px 12px; font-size:13px;">
+              <i class="fa fa-download"></i> Export
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Password</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <!-- Rows injected via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'admin_token';
+    const LOCAL_KEY = 'rm_users_v1';
+    const API = '/api'; const ADMIN = '/api/admin';
+
+    const modeLabel = document.getElementById('modeLabel');
+    const bindDoctorSel = document.getElementById('bindDoctor');
+    const usernameIn = document.getElementById('username');
+    const passwordIn = document.getElementById('password');
+    const fullnameIn = document.getElementById('fullname');
+    const mobileIn = document.getElementById('mobile');
+    const categoryIn = document.getElementById('userCategory');
+    const statusIn = document.getElementById('status');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnClear = document.getElementById('btnClear');
+    const msgEl = document.getElementById('msg');
+    const usersBody = document.getElementById('usersBody');
+    const btnReport = document.getElementById('btnReport');
+    const toggleAllPw = document.getElementById('toggleAllPw');
+    const pwShow = document.getElementById('pwShow');
+
+    let doctorsList = [];
+    let editingId = null;
+
+    function isServerMode() { return !!localStorage.getItem(TOKEN_KEY); }
+    function updateMode() { modeLabel.innerText = isServerMode() ? 'Server' : 'Local'; }
+
+    function uuid() { return 'u_' + Math.random().toString(36).slice(2, 9); }
+
+    function loadLocalUsers() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch (e) { return []; } }
+    function saveLocalUsers(arr) { localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
+
+    async function loadDoctors() {
+      bindDoctorSel.innerHTML = '<option value="">-- Select Doctor --</option>';
+      const token = localStorage.getItem(TOKEN_KEY) || 'my-secret-key';
+      try {
+        const res = await fetch(API + '/doctors', { headers: { 'x-admin-key': token } });
+        if (res.ok) {
+          const j = await res.json();
+          doctorsList = j.doctors || [];
+        } else {
+          doctorsList = [];
+        }
+      } catch (e) {
+        doctorsList = [];
+      }
+      doctorsList.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id || d.doctor_code;
+        opt.textContent = (d.name || d.first_name) + (d.specialization ? ' — ' + d.specialization : '');
+        bindDoctorSel.appendChild(opt);
+      });
+    }
+
+    function renderUsers() {
+      const users = loadLocalUsers();
+      usersBody.innerHTML = '';
+      if (!users.length) {
+        usersBody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted); text-align:center; padding:24px;">No users saved yet.</td></tr>';
+        return;
+      }
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        const statusHtml = u.status == 1
+          ? '<span class="status-badge status-active">Active</span>'
+          : '<span class="status-badge status-inactive">Inactive</span>';
+
+        // Use server ID if available, else local ID
+        const displayId = u.id || u._id;
+        const dataId = u.id || u._id;
+
+        tr.innerHTML = `
+          <td><span style="font-family:monospace; font-size:12px; background:#f3f4f6; padding:2px 6px; border-radius:4px;">${escapeHtml(u.username)}</span></td>
+          <td>${escapeHtml(u.fullname || '-')}</td>
+          <td>${escapeHtml(u.mobile || '-')}</td>
+          <td>${escapeHtml(u.category || '-')}</td>
+          <td>${statusHtml}</td>
+          <td><span style="font-family:monospace;">${toggleAllPw.checked ? escapeHtml(u.password || '') : '••••••'}</span></td>
+          <td style="text-align:right">
+            <button class="action-btn" data-id="${dataId}" data-act="edit" title="Edit"><i class="fa fa-pen"></i></button>
+            <button class="action-btn delete" data-id="${dataId}" data-act="del" title="Delete"><i class="fa fa-trash"></i></button>
+          </td>
+        `;
+        usersBody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(s) { if (!s && s !== '') return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function showMsg(text, type = 'success') {
+      msgEl.style.display = 'block';
+      msgEl.className = 'msg ' + (type === 'error' ? 'error' : 'success');
+      msgEl.innerHTML = (type === 'error' ? '<i class="fa fa-exclamation-circle"></i> ' : '<i class="fa fa-check-circle"></i> ') + text;
+      setTimeout(() => msgEl.style.display = 'none', 3500);
+    }
+
+    btnCreate.addEventListener('click', async () => {
+      const username = usernameIn.value.trim(); const password = passwordIn.value; const fullname = fullnameIn.value.trim(); const mobile = mobileIn.value.trim();
+      const category = categoryIn.value.trim() || 'Doctor'; const status = Number(statusIn.value); const bindDoctor = bindDoctorSel.value;
+
+      console.log('Attempting to save user:', { editingId, username, fullname, mobile, category, status, bindDoctor });
+
+      if (!username) { showMsg('Username required', 'error'); return; }
+      if (!editingId && (!password || password.length < 6)) { showMsg('Password (min 6 chars) required for new users', 'error'); return; }
+
+      const payload = { username, fullname, mobile, category, status };
+      if (password) payload.password = password; // Only send password if provided (for edits)
+
+      const token = localStorage.getItem(TOKEN_KEY) || 'my-secret-key';
+      console.log('Using token:', token);
+
+      try {
+        let serverSuccess = false;
+        let url, method, res;
+
+        if (editingId) {
+          // EDIT MODE
+          // If editingId is numeric, it's a server ID. If it starts with 'u_', it's local only.
+          if (String(editingId).startsWith('u_')) {
+            showMsg('Cannot update local-only user on server. Please delete and recreate.', 'error');
+            return;
+          }
+          url = `${ADMIN}/users/${editingId}`;
+          method = 'PUT';
+        } else {
+          // CREATE MODE
+          if (bindDoctor) {
+            url = `${ADMIN}/doctors/${bindDoctor}/credentials`;
+          } else {
+            url = `${ADMIN}/users`;
+          }
+          method = 'POST';
+        }
+
+        console.log(`Sending ${method} request to:`, url);
+        res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json', 'x-admin-key': token }, body: JSON.stringify(payload) });
+
+        const j = await res.json();
+        console.log('Server response:', res.status, j);
+
+        if (res.ok) {
+          showMsg(editingId ? 'User updated successfully' : 'User created successfully');
+          serverSuccess = true;
+        } else {
+          console.error('Server returned error:', j);
+          showMsg(j.error || j.message || 'Server error', 'error');
+        }
+
+        if (serverSuccess) {
+          const arr = loadLocalUsers();
+          if (editingId) {
+            const idx = arr.findIndex(u => u.id == editingId || u._id === editingId);
+            if (idx >= 0) {
+              arr[idx] = { ...arr[idx], ...payload }; // Update local copy
+            }
+          } else {
+            // Save server ID if available
+            const newId = j.id || uuid();
+            arr.push({ _id: uuid(), id: newId, ...payload, created_at: new Date().toISOString() });
+          }
+          saveLocalUsers(arr);
+          renderUsers();
+          clearForm();
+        }
+      } catch (e) {
+        console.error('Network or parsing error:', e);
+        showMsg('Network error: ' + e.message + '. Saved locally only.', 'error');
+        // On network error, we might still want to save locally if it's a create
+        if (!editingId) {
+          const arr = loadLocalUsers(); arr.push({ _id: uuid(), ...payload, created_at: new Date().toISOString() }); saveLocalUsers(arr); renderUsers(); clearForm();
+        }
+      }
+    });
+
+    btnClear.addEventListener('click', clearForm);
+    function clearForm() {
+      usernameIn.value = ''; passwordIn.value = ''; fullnameIn.value = ''; mobileIn.value = '';
+      categoryIn.value = ''; statusIn.value = '1'; bindDoctorSel.value = ''; editingId = null;
+      btnCreate.innerHTML = '<i class="fa fa-plus"></i> Create User'; // Reset button text
+    }
+
+    usersBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button'); if (!btn) return; const id = btn.dataset.id; const act = btn.dataset.act;
+
+      if (act === 'del') {
+        if (!confirm('Delete this user?')) return;
+
+        // Try server delete
+        const token = localStorage.getItem(TOKEN_KEY) || 'my-secret-key';
+        try {
+          if (!String(id).startsWith('u_')) {
+            await fetch(`${ADMIN}/users/${id}`, { method: 'DELETE', headers: { 'x-admin-key': token } });
+          }
+        } catch (e) { console.error(e); }
+
+        let arr = loadLocalUsers(); arr = arr.filter(u => u.id != id && u._id !== id); saveLocalUsers(arr); renderUsers(); showMsg('User deleted');
+      }
+      else if (act === 'edit') {
+        const arr = loadLocalUsers(); const u = arr.find(x => x.id == id || x._id === id); if (!u) return;
+        usernameIn.value = u.username; passwordIn.value = ''; fullnameIn.value = u.fullname || '';
+        mobileIn.value = u.mobile || ''; categoryIn.value = u.category || ''; statusIn.value = u.status ? '1' : '0';
+        editingId = u.id || u._id;
+        btnCreate.innerHTML = '<i class="fa fa-save"></i> Update User'; // Change button text
+        showMsg('Editing user — update and press Save');
+      }
+    });
+
+    // Download CSV/Excel
+    btnReport.addEventListener('click', () => {
+      const users = loadLocalUsers(); if (!users.length) { showMsg('No users to download', 'error'); return; }
+      const headers = ['username', 'full_name', 'mobile', 'category', 'status', 'password', 'created_at'];
+      const rows = users.map(u => headers.map(h => '"' + (String(u[h] === undefined ? '' : (u[h] === null ? '' : u[h]))).replace(/"/g, '""') + '"').join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'users_report.csv'; a.click(); URL.revokeObjectURL(url); showMsg('CSV downloaded');
+    });
+
+    // toggle show all passwords
+    toggleAllPw.addEventListener('change', () => { renderUsers(); });
+
+    // individual password show toggle
+    pwShow.addEventListener('click', () => {
+      if (passwordIn.type === 'password') {
+        passwordIn.type = 'text'; pwShow.innerText = 'Hide';
+      } else {
+        passwordIn.type = 'password'; pwShow.innerText = 'Show';
+      }
+    });
+
+    // Autofill form when doctor is selected
+    bindDoctorSel.addEventListener('change', () => {
+      const docId = bindDoctorSel.value;
+      if (!docId) return;
+
+      const doc = doctorsList.find(d => (d.id || d.doctor_code) == docId);
+      if (doc) {
+        fullnameIn.value = (doc.name || doc.first_name || '') + (doc.last_name ? ' ' + doc.last_name : '');
+        mobileIn.value = doc.phone || doc.contact_number || '';
+        categoryIn.value = 'Doctor';
+        // Optional: suggest a username
+        if (!usernameIn.value) {
+          const namePart = (doc.first_name || doc.name || '').toLowerCase().replace(/\s+/g, '');
+          usernameIn.value = namePart + (doc.id || Math.floor(Math.random() * 100));
+        }
+      }
+    });
+
+    // Sync users from server to get IDs
+    async function syncUsers() {
+      const token = localStorage.getItem(TOKEN_KEY) || 'my-secret-key';
+      try {
+        const res = await fetch(ADMIN + '/users', { headers: { 'x-admin-key': token } });
+        if (res.ok) {
+          const j = await res.json();
+          const serverUsers = j.users || [];
+          let localUsers = loadLocalUsers();
+
+          // Merge strategy: Server is truth for IDs.
+          // Update local users with server IDs if username matches
+          let changed = false;
+
+          localUsers = localUsers.map(loc => {
+            const match = serverUsers.find(srv => srv.username === loc.username);
+            if (match) {
+              if (loc.id !== match.id) {
+                loc.id = match.id; // Sync ID
+                changed = true;
+              }
+            }
+            return loc;
+          });
+
+          // Also add users from server that are not in local (if any)
+          serverUsers.forEach(srv => {
+            if (!localUsers.find(loc => loc.username === srv.username)) {
+              localUsers.push({
+                _id: uuid(), // Generate a local UUID for UI consistency
+                id: srv.id,
+                username: srv.username,
+                fullname: srv.full_name,
+                mobile: srv.mobile,
+                category: srv.category,
+                status: srv.status,
+                created_at: srv.created_at
+              });
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            saveLocalUsers(localUsers);
+            renderUsers();
+            console.log('Synced users with server.');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to sync users:', e);
+      }
+    }
+
+    updateMode(); loadDoctors(); renderUsers(); syncUsers();
+  </script>
+</body>
+
+</html>

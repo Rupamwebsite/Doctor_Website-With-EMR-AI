@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Billing & Invoice</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* --- 1. VARIABLES & RESET --- */
+    :root {
+      --primary: #3b82f6;
+      /* Vivid Blue */
+      --primary-dark: #2563eb;
+      --secondary: #64748b;
+      --accent: #8b5cf6;
+      /* Purple Accent */
+      --bg-body: #f0f4f8;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+      --sidebar-w: 260px;
+      --header-h: 70px;
+    }
+
+    * {
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* --- 2. SIDEBAR --- */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 100;
+      transition: 0.3s;
+      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo-area {
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(90deg, #0f172a, #1e293b);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      margin-right: 12px;
+      color: white;
+      font-size: 16px;
+    }
+
+    .nav-links {
+      flex: 1;
+      padding: 20px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      padding: 14px 16px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      color: #cbd5e1;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      font-weight: 600;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    /* --- 3. MAIN CONTENT --- */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Header */
+    .header {
+      height: var(--header-h);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 90;
+    }
+
+    .page-title h2 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .page-title span {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Scroll Area */
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      scroll-behavior: smooth;
+    }
+
+    /* Grid Layout */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 28px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    /* --- 4. COMPONENTS --- */
+    .panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .panel-head {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .panel-body {
+      padding: 24px;
+      flex: 1;
+    }
+
+    /* Form */
+    .form-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-box {
+      position: relative;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 14px;
+      color: var(--text-main);
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      background: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-success:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    /* Table & Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-bar {
+      flex: 1;
+      position: relative;
+      min-width: 240px;
+    }
+
+    .search-bar input {
+      padding-left: 38px;
+      border-radius: 50px;
+      background: #f1f5f9;
+      border-color: transparent;
+    }
+
+    .search-bar input:focus {
+      background: #fff;
+      border-color: var(--primary);
+    }
+
+    .search-bar i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    /* Data Table */
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      padding: 14px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* Badges */
+    .badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* --- UTILITIES & RESPONSIVE --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(3px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: 0.3s;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-box {
+      background: white;
+      width: 400px;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      transform: scale(0.95);
+      transition: 0.3s;
+    }
+
+    .modal-overlay.open .modal-box {
+      transform: scale(1);
+    }
+
+    @media (max-width: 1200px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div
+        style="width:36px;height:36px;background:var(--primary);border-radius:8px;margin-right:10px;display:inline-block">
+      </div><span>RM HealthCare</span>
+    </div>
+    <div class="nav-links">
+      <a class="nav-item" href="/doctors-master.html"><i class="fas fa-user-md"></i> Doctor Master</a>
+      <a class="nav-item" href="/patient-registry.html"><i class="fas fa-procedures"></i> Patient Registry</a>
+      <a class="nav-item" href="#"><i class="fas fa-calendar-check"></i> Appointments</a>
+      <a class="nav-item active" href="/billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing & Invoice</a>
+      <a class="nav-item" href="./User_create.html"><i class="fas fa-user-plus"></i> Create Users</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <div>
+        <div style="font-weight:700">Billing & Invoice</div>
+        <div style="font-size:13px;color:#64748b">List of bookings with payment information</div>
+      </div>
+
+    </header>
+
+    <div class="content-scroll">
+      <div class="container">
+        <div class="toolbar">
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input id="search" placeholder="Search by patient, doctor, phone...">
+          </div>
+          <div id="count" class="badge">0 invoices</div>
+          <div style="flex:1"></div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-success" onclick="downloadBillingExcel()"><i class="fas fa-file-excel"></i> Export
+              Excel</button>
+            <button class="btn btn-outline" onclick="loadBilling()"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+        </div>
+
+        <div id="loadMsg" style="margin:12px 0;color:#7f8fa4;font-size:14px"></div>
+        <div class="table-wrap">
+          <div class="table-responsive">
+            <table id="billingTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Patient</th>
+                  <th>Phone / Email</th>
+                  <th>Sex / Age</th>
+                  <th>Doctor</th>
+                  <th>Booking Date</th>
+                  <th>Date</th>
+                  <th>Payment</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th style="width:160px;text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'admin_token';
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) location.href = '/login.html';
+
+    async function api(url, method = 'GET', body = null) {
+      const headers = { 'x-admin-key': token };
+      if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+      try {
+        const res = await fetch(url, { method, headers, body: body && !(body instanceof FormData) ? JSON.stringify(body) : body });
+        if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); location.href = '/login.html'; return null; }
+        return await res.json();
+      } catch (e) { console.error(e); alert('Connection error'); return null; }
+    }
+
+    let appointments = [];
+    function escapeHtml(s) { if (!s) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function formatDate(isoStr) {
+      if (!isoStr) return '—';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '—';
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    async function loadBilling() {
+      document.getElementById('loadMsg').innerText = '';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="muted">Loading...</td></tr>'; // colspan updated to 11
+      const res = await api('/api/admin/appointments');
+      if (res === null) {
+        document.getElementById('loadMsg').innerText = 'Connection error. Check network or server.';
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="muted">Failed to load.</td></tr>';
+        return;
+      }
+      if (res.error) {
+        document.getElementById('loadMsg').innerText = `Failed to load: ${res.error} (status ${res.status || '?'})`;
+        console.error('billing load error', res);
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="11" class="muted">Failed to load.</td></tr>';
+        return;
+      }
+      appointments = res.appointments || [];
+      if (!appointments.length) document.getElementById('loadMsg').innerText = 'No invoices found.';
+      render();
+    }
+
+    let filteredInvoices = [];
+
+    function render() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      filteredInvoices = appointments.filter(a => {
+        if (!q) return true;
+        return (a.patient_name || '').toLowerCase().includes(q)
+          || (a.doctor_name || '').toLowerCase().includes(q)
+          || (a.patient_phone || '').includes(q)
+          || (a.patient_email || '').toLowerCase().includes(q)
+          || (a.payment_id || '').toLowerCase().includes(q)
+          || (a.payment_order_id || '').toLowerCase().includes(q);
+      });
+      const rows = filteredInvoices;
+      document.getElementById('count').innerText = `${rows.length} invoices`;
+      const tb = document.getElementById('tbody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" class="muted">No invoices found</td></tr>'; return; } // colspan updated
+      tb.innerHTML = rows.map(r => {
+        const amount = r.payment_amount != null ? ('₹' + r.payment_amount) : '-';
+        const pm = r.payment_method || '-';
+        const status = r.status || (r.payment_method ? 'Approved' : 'Pending');
+        const sexAge = `${r.patient_sex || ''} ${r.patient_age ? '(' + r.patient_age + ')' : ''}`.trim() || '-';
+
+        return `
+          <tr>
+            <td><strong>#${r.id}</strong></td>
+            <td><div style="font-weight:700">${escapeHtml(r.patient_name || '—')}</div><div class="muted" style="font-size:12px">${escapeHtml(r.patient_address || '')}</div></td>
+            <td>${escapeHtml(r.patient_phone || '')}<div class="muted" style="font-size:12px">${escapeHtml(r.patient_email || '')}</div></td>
+            <td>${sexAge}</td>
+            <td>${escapeHtml(r.doctor_name || '—')}</td>
+            <td>${formatDate(r.created_at)}</td>
+            <td>${formatDate(r.appointment_date)}</td>
+            <td>${pm}</td>
+            <td>${amount}</td>
+            <td style="white-space:nowrap">${status === 'Approved' ? '<span class="badge" style="background:' + 'var(--success)' + '; color:#fff;padding:6px 10px;border-radius:12px">Approved</span>' : '<span class="badge" style="background:' + 'var(--warning)' + '; color:#fff;padding:6px 10px;border-radius:12px">Pending</span>'}</td>
+            <td style="text-align:right">
+              <button class="btn btn-outline" onclick="viewInvoice(${r.id})"><i class="fas fa-file-invoice"></i></button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function viewInvoice(id) {
+      const r = appointments.find(a => a.id === id);
+      if (!r) return;
+
+      // Use stored bill if available (for old invoices)
+      if (r.bill_html && r.bill_html.trim().length > 10) {
+        const w = window.open('', '_blank', 'width=900,height=800');
+        w.document.write(r.bill_html);
+        w.document.close();
+        return;
+      }
+
+      const date = new Date().toLocaleDateString('en-IN');
+      const amount = r.payment_amount != null ? Number(r.payment_amount).toFixed(2) : '0.00';
+      // Assume 18% GST included or extra? Let's assume inclusive for simplicity or add generic calc
+      // Simple logic: Amount is total.
+
+      const html = `
+        <html>
+        <head>
+            <title>Invoice #${r.id}</title>
+            <style>
+                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color:#333; }
+                .header { display: flex; justify-content: space-between; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #eee; }
+                .company h1 { margin: 0; color: #3b82f6; font-size: 28px; }
+                .company p { margin: 5px 0 0; color: #666; font-size: 14px; }
+                .invoice-details { text-align: right; }
+                .invoice-details h2 { margin: 0; font-size: 24px; color: #333; }
+                .invoice-details p { margin: 5px 0 0; color: #666; }
+                .bill-to { margin-bottom: 30px; }
+                .bill-to h3 { margin: 0 0 10px; color: #3b82f6; font-size: 16px; text-transform: uppercase; }
+                .bill-to p { margin: 0; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { text-align: left; padding: 12px; background: #f8fafc; border-bottom: 2px solid #eee; font-weight: 600; color: #64748b; font-size: 13px; text-transform: uppercase; }
+                td { padding: 12px; border-bottom: 1px solid #eee; }
+                .total-section { text-align: right; }
+                .total-row { display: flex; justify-content: flex-end; padding: 5px 0; }
+                .total-label { width: 150px; color: #666; }
+                .total-value { width: 100px; font-weight: 600; }
+                .grand-total { font-size: 18px; color: #3b82f6; border-top: 2px solid #eee; padding-top: 10px; margin-top: 10px; }
+                .footer { margin-top: 50px; text-align: center; color: #999; font-size: 13px; border-top: 1px solid #eee; padding-top: 20px; }
+                .print-btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+                @media print { .print-btn { display: none; } body { padding: 20px; } }
+            </style>
+        </head>
+        <body>
+            <button class="print-btn" onclick="window.print()">Print Invoice</button>
+            <div class="header">
+                <div class="company">
+                    <h1>RM HealthCare</h1>
+                    <p>123 Medical Avenue, City, State - 700001</p>
+                    <p>Phone: +91 9876543210 | Email: contact@rmhealthcare.com</p>
+                </div>
+                <div class="invoice-details">
+                    <h2>INVOICE</h2>
+                    <p>Nr: #INV-${r.id}</p>
+                    <p>Date: ${formatDate(r.appointment_date) || date}</p>
+                </div>
+            </div>
+
+            <div class="bill-to">
+                <h3>Bill To:</h3>
+                <p><strong>${escapeHtml(r.patient_name)}</strong></p>
+                <p>${escapeHtml(r.patient_address || 'Address not provided')}</p>
+                <p>Phone: ${escapeHtml(r.patient_phone)}</p>
+                <p>${r.patient_sex || ''} ${r.patient_age ? '| Age: ' + r.patient_age : ''}</p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:50px">#</th>
+                        <th>Description</th>
+                        <th>Doctor</th>
+                        <th style="text-align:right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Medical Consultation - ${r.doctor_name}</td>
+                        <td>${r.doctor_name}<br><small class="muted">${formatDate(r.appointment_date)} ${r.appointment_time}</small></td>
+                        <td style="text-align:right">₹${amount}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="total-section">
+                <div class="total-row">
+                    <div class="total-label">Subtotal:</div>
+                    <div class="total-value">₹${amount}</div>
+                </div>
+                <!-- <div class="total-row">
+                    <div class="total-label">Tax (0%):</div>
+                    <div class="total-value">₹0.00</div>
+                </div> -->
+                <div class="total-row grand-total">
+                    <div class="total-label">Total:</div>
+                    <div class="total-value">₹${amount}</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Status: <strong>${r.status || 'Pending'}</strong> | Payment ID: ${r.payment_id || 'N/A'}</p>
+                <p>Thank you for choosing RM HealthCare. Get well soon!</p>
+            </div>
+        </body>
+        </html>
+        `;
+
+      const w = window.open('', '_blank', 'width=900,height=800');
+      w.document.write(html);
+      w.document.close();
+    }
+
+    document.getElementById('search').addEventListener('input', render);
+    loadBilling();
+
+    function downloadBillingExcel() {
+      if (!filteredInvoices.length) return alert('No invoices to export');
+
+      const data = filteredInvoices.map(r => ({
+        'Invoice ID': r.id,
+        'Patient Name': r.patient_name,
+        'Phone': r.patient_phone,
+        'Email': r.patient_email,
+        'Sex': r.patient_sex,
+        'Age': r.patient_age,
+        'Doctor': r.doctor_name,
+        'Booking Date': formatDate(r.created_at),
+        'Appt. Date': formatDate(r.appointment_date),
+        'Time': r.appointment_time,
+        'Payment Method': r.payment_method || '-',
+        'Amount': r.payment_amount != null ? r.payment_amount : '0.00',
+        'Status': r.status || (r.payment_method ? 'Approved' : 'Pending'),
+        'Payment ID': r.payment_id || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Billing");
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `Billing_Invoices_${dateStr}.xlsx`);
+    }
+  </script>
+</body>
+
+</html>

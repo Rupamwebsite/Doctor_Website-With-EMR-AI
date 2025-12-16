@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - RM HealthCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="./p_style.css">
+    <link rel="stylesheet" href="./chat-widget.css">
+</head>
+
+<body>
+    <div class="topbar">
+        <div class="contact-info">
+            <a href="tel:+919635185829" class="contact-item">
+                <i class="fa fa-phone"></i> +91 9635185829
+            </a>
+            <span class="divider">|</span>
+            <a href="mailto:rupam.mandal@peerlesshospital.com" class="contact-item">
+                <i class="fa fa-envelope"></i> rupam.mandal@peerlesshospital.com
+            </a>
+        </div>
+        <div class="social-icons">
+            <a href="#" class="facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="linkedin"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+    </div>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-stethoscope"></i>
+                    <span>RM HealthCare</span>
+                </div>
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <nav id="mobileMenu">
+                    <ul>
+                        <li><a href="Patient_Dashboard.html">Home</a></li>
+                        <li><a href="Patient_Dashboard.html#doctors">Doctors</a></li>
+                        <li><a href="Patient_Dashboard.html#services">Services</a></li>
+                        <li><a href="Patient_Dashboard.html#features">About Us</a></li>
+                        <li><a href="Patient_Dashboard.html#contact">Contact</a></li>
+                        <li><a href="my_bookings.html" class="active">My Bookings</a></li>
+                    </ul>
+                </nav>
+                <div class="user-actions" style="display:flex;align-items:center;gap:10px">
+                    <button id="logoutBtn" class="auth-buttons" title="Logout">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="breadcrumb">
+        <div class="container">
+            <div class="breadcrumb-content">
+                <a href="Patient_Dashboard.html">Home</a>
+                <span>/</span>
+                <a href="#">My Bookings</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- My Bookings Section -->
+    <section id="bookingsSection" class="container" style="padding: 40px 0;">
+        <h2 style="text-align: center; margin-bottom: 30px; color: #0b4c8c;">My Bookings</h2>
+        <div class="table-responsive">
+            <table class="table table-striped" id="bookings-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Doctor</th>
+                        <th>Patient</th>
+                        <th>Phone</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookings-list">
+                    <!-- Rows will be loaded here -->
+                </tbody>
+            </table>
+            <p id="loading-msg" style="text-align: center; padding: 20px; color: #6c757d;">Loading your bookings...</p>
+        </div>
+    </section>
+
+    <footer id="contact" class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>RM HealthCare</h4>
+                    <p>We provide the best healthcare solutions so you can stay healthy and enjoy your life.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="Patient_Dashboard.html#features">About Us</a></li>
+                        <li><a href="Patient_Dashboard.html#services">Our Services</a></li>
+                        <li><a href="Patient_Dashboard.html#doctors">Doctors List</a></li>
+                        <li><a href="#">Patient Testimonials</a></li>
+                        <li><a href="Patient_Dashboard.html#contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Our Services</h4>
+                    <ul>
+                        <li><a href="#">Cardiology</a></li>
+                        <li><a href="#">Neurology</a></li>
+                        <li><a href="#">Pediatrics</a></li>
+                        <li><a href="#">Orthopedics</a></li>
+                        <li><a href="#">Other</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> 123 Health St, Kolkata, India</p>
+                    <p><i class="fas fa-phone"></i> +91 9635185829</p>
+                    <p><i class="fas fa-envelope"></i> info@rmhealthcare.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 RM HealthCare. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI Chat Widget -->
+    <div id="chat-widget-container"></div>
+
+    <script src="./p_script.js"></script>
+    <script src="./chat-widget.js"></script>
+    <script>
+        // Load chat widget HTML
+        fetch('./chat-widget.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('chat-widget-container').innerHTML = html;
+                // Re-initialize chat after loading
+                initializeChatWidget();
+            })
+            .catch(error => console.error('Failed to load chat widget:', error));
+    </script>
+</body>
+
+</html>

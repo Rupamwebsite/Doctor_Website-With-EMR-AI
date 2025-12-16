@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - RM HealthCare</title>
+    <style>
+        :root {
+            --brand: #2563eb;
+            --brand-dark: #1e40af;
+            --border: #e5e7eb;
+            --bg: #f9fafb;
+            --text-ink: #111827;
+            --text-muted: #6b7280;
+            --danger: #ef4444;
+            --radius: 8px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+            background: linear-gradient(135deg, var(--bg) 0%, #f0f6ff 100%);
+            display: grid;
+            place-items: center;
+            min-height: 90vh;
+            color: var(--text-muted);
+        }
+        .login-wrapper {
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px 40px;
+        }
+        
+        .logo-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--brand);
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .logo-header h2 {
+            margin: 12px 0 0;
+            color: var(--text-ink);
+            font-size: 24px;
+        }
+        .logo-header p {
+            margin: 4px 0 0;
+            font-size: 15px;
+        }
+        
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .input-group svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #9ca3af;
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px 12px 45px; /* Icon এর জন্য বাম দিকে প্যাডিং */
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            border-color: var(--brand);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn {
+            width: 100%;
+            background: var(--brand);
+            color: #fff;
+            border: 0;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background: var(--brand-dark);
+        }
+        .btn .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none; 
+        }
+        .btn.loading .btn-text { display: none; }
+        .btn.loading .spinner { display: block; }
+        .btn.loading { cursor: not-allowed; background: var(--brand-dark); }
+        
+        #error-msg {
+            color: var(--danger);
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            display: none; 
+            background: #fffbeb;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-header">
+                <div class="logo">R</div>
+                <h2>RM HealthCare</h2>
+                <p>Admin Portal</p>
+            </div>
+
+                <form id="loginForm">
+                <div id="adminArea">
+                    <div class="input-group">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                        <input type="password" id="adminKey" placeholder="Enter Admin Key">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="loginButton">
+                    <span class="btn-text">Login Securely</span>
+                    <div class="spinner"></div>
+                </button>
+                
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+                    <p id="error-msg" style="margin:0;"></p>
+                    <a href="#" id="forgotLink" style="font-size:13px;color:var(--brand);text-decoration:none;display:none;">Forgot / Change password</a>
+                </div>
+                
+            </form>
+
+            <!-- Forgot Password Modal -->
+            <div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
+                <div style="background:#fff;padding:20px;border-radius:10px;max-width:420px;margin:0 auto;">
+                    <h3 style="margin-top:0">Forgot Password</h3>
+                    <p style="color:var(--text-muted);font-size:14px">Enter your doctor username. You can either provide your old password to change it, or use a token method.</p>
+                    <input id="forgotUsername" placeholder="username" style="width:100%;padding:10px;margin-top:8px;margin-bottom:12px;border-radius:6px;border:1px solid var(--border)">
+                    <div style="display:flex;gap:8px;justify-content:flex-end">
+                        <button class="btn btn-outline" onclick="document.getElementById('forgotModal').style.display='none'">Cancel</button>
+                        <button class="btn btn-primary" id="forgotSendBtn">Send Token</button>
+                    </div>
+                    <p id="forgotResp" style="font-size:13px;color:var(--text-muted);margin-top:12px"></p>
+
+                    <hr style="margin:14px 0">
+                    <h4 style="margin:8px 0">Change / Reset Password</h4>
+                    <p style="color:var(--text-muted);font-size:13px;margin-top:0">Provide either your <b>old password</b> to change it immediately, or a <b>token</b> (if you requested one).</p>
+                    <input id="forgotOldPassword" type="password" placeholder="Old password (if you know it)" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
+                    <input id="forgotTokenInput" placeholder="token (if using token reset)" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
+                    <input id="forgotNewPassword" type="password" placeholder="New password" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
+                    <input id="forgotNewPasswordConfirm" type="password" placeholder="Confirm new password" style="width:100%;padding:10px;margin-top:8px;margin-bottom:12px;border-radius:6px;border:1px solid var(--border)">
+                    <div style="display:flex;gap:8px;justify-content:flex-end">
+                        <button class="btn btn-outline" onclick="document.getElementById('forgotTokenInput').value=''; document.getElementById('forgotNewPassword').value='';">Clear</button>
+                        <button class="btn btn-primary" id="forgotResetBtn">Reset Password</button>
+                    </div>
+                    <p id="forgotResetResp" style="font-size:13px;color:var(--text-muted);margin-top:12px"></p>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./login-gate.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Patient Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+    }
+    .section {
+      background: white;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    .doctor-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .btn {
+      background: #007bff;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Welcome, Rupam</h1>
+  <p>Patient Dashboard</p>
+</header>
+
+<div class="container">
+  <div class="section">
+    <h2>Search & Book Doctors</h2>
+    <div class="doctor-card">
+      <p><strong>Dr. A. Roy</strong> - Cardiologist</p>
+      <p>Available: Mon, Wed, Fri</p>
+      <button class="btn">Book Appointment</button>
+    </div>
+    <div class="doctor-card">
+      <p><strong>Dr. S. Das</strong> - Dermatologist</p>
+      <p>Available: Tue, Thu</p>
+      <button class="btn">Book Appointment</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>My Appointments</h2>
+    <ul>
+      <li>Dr. A. Roy - 3rd Oct, 10:00 AM - Confirmed</li>
+      <li>Dr. S. Das - 5th Oct, 2:00 PM - Pending</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Profile Settings</h2>
+    <button class="btn">Edit Profile</button>
+    <button class="btn">Logout</button>
+  </div>
+</div>
+
+</body>
+</html>

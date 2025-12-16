@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - RM HealthCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="booking.css">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container flex-header">
+            <div class="logo">RM <span>HealthCare</span></div>
+            <nav>
+                <a href="../Patient_Dashboard.html">Back to Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="page-banner">
+        <div class="container">
+            <h1>Book Your Appointment</h1>
+            <p>Home / Doctor / Book Your Appointment</p>
+        </div>
+    </div>
+
+    <div class="container booking-wrapper">
+        
+        <div class="steps-wrapper">
+            <div class="step active" id="step1-indicator">
+                <div class="circle">1</div>
+                <p>Schedule Appointment</p>
+            </div>
+            <div class="line"></div>
+            <div class="step" id="step2-indicator">
+                <div class="circle">2</div>
+                <p>Patient Details</p>
+            </div>
+            <div class="line"></div>
+            <div class="step" id="step3-indicator">
+                <div class="circle">3</div>
+                <p>Confirmation</p>
+            </div>
+        </div>
+
+        <div id="step1" class="step-content active">
+            <div class="split-layout">
+                
+                <div class="left-info">
+                    <div class="section-label">
+                        <span>E-Appointment</span>
+                        <div class="label-line"></div>
+                    </div>
+                    <h2 class="section-heading">Schedule Your Appointment</h2>
+                    
+                    <h3 class="doctor-name" id="docNameDisplay">LOADING...</h3>
+                    
+                    <div class="schedule-box">
+                        <p id="scheduleText">Loading Schedule...</p>
+                    </div>
+                    
+                    <div class="form-row top-gap">
+                        <div class="form-group">
+                            <label>Your Department <span style="color:red">*</span></label>
+                            <input type="text" id="deptInput" readonly class="input-style">
+                        </div>
+                        <div class="form-group">
+                            <label>Select Your Doctor <span style="color:red">*</span></label>
+                            <input type="text" id="docInput" readonly class="input-style">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-calendar">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <select id="calMonth"></select>
+                            <select id="calYear"></select>
+                        </div>
+                        <div class="calendar-days-header">
+                            <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                        
+                        <div class="fee-info">
+                            Appointment Fee : <span id="feeDisplay">₹0</span>/-
+                        </div>
+                    </div>
+                    
+                    <div class="date-selection-box">
+                        <input type="text" id="selectedDateDisplay" placeholder="Select the Date" readonly>
+                    </div>
+                    
+                    <div id="availabilityMsg" style="font-size:13px; margin-top:5px;"></div>
+
+                    <div style="text-align:right; margin-top:15px;">
+                        <button type="button" class="btn-next" id="btnNext1" disabled onclick="goToStep(2)">Next</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="step2" class="step-content">
+            <h2 class="section-heading" style="margin-bottom:20px;">Patient Information</h2>
+            <form id="patientForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patient Name*</label>
+                        <input type="text" id="pName" class="input-style" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number*</label>
+                        <input type="tel" id="pPhone" class="input-style" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="pEmail" class="input-style" placeholder="you@example.com" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="pAge" class="input-style" min="0" placeholder="e.g. 32">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" id="pDob" class="input-style">
+                    </div>
+                    <div class="form-group">
+                        <label>Sex / Gender</label>
+                        <select id="pSex" class="input-style">
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Address</label>
+                        <textarea id="pAddress" class="input-style textarea-address" rows="2" placeholder="Street address, City, State, ZIP (optional)"></textarea>
+                        
+                    </div>
+                </div>
+                
+                <div class="btn-row">
+                    <button type="button" class="btn-back" onclick="goToStep(1)">Back</button>
+                    <button type="submit" class="btn-next" id="confirmBtn">Confirm Booking</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="step3" class="step-content" style="text-align:center; padding: 40px;">
+            <i class="fas fa-check-circle" style="font-size:60px; color:#28a745; margin-bottom:20px;"></i>
+            <h2 style="color:#28a745">Booking Successful!</h2>
+            <p>Your appointment has been scheduled.</p>
+                        <div id="printAreaWrapper">
+                            <div class="print-logo" style="margin-top:20px; display:flex; align-items:center; justify-content:center; gap:12px;">
+                                <img src="/uploads/logo.png" alt="RM HealthCare" style="height:48px; display:block;" onerror="this.style.display='none'">
+                                <div style="text-align:left;"><div style="font-weight:700; font-size:16px;">RM HealthCare</div><div style="font-size:12px; color:#666;">Appointment Confirmation</div></div>
+                            </div>
+                            <div id="printArea" style="margin-top:12px; border:1px dashed #ccc; padding:20px; display:inline-block; text-align:left; background:#fff;">
+                <p><strong>Token:</strong> <span id="confToken"></span></p>
+                <p><strong>Doctor:</strong> <span id="confDoc"></span></p>
+                <p><strong>Date:</strong> <span id="confDate"></span></p>
+                <p><strong>Time:</strong> <span id="confTime"></span></p>
+                            </div>
+                            <input type="hidden" id="confAppointmentId" value="">
+                        </div>
+                        <br>
+                        <div style="margin-top:18px; display:flex; gap:12px; justify-content:center; flex-wrap: wrap;">
+                            <button class="btn-next" onclick="printConfirmation()" style="background:#1e3a8a;">Print Confirmation</button>
+                            <button class="btn-next" onclick="downloadBill()" style="background:#16a34a;">Download Bill</button>
+                            <button class="btn-next" onclick="window.location.href='../Patient_Dashboard.html'">Back to Home</button>
+                        </div>
+        </div>
+
+    </div>
+
+    <script src="booking.js"></script>
+</body>
+</html>

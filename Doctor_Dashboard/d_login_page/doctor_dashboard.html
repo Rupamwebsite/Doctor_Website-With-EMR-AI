@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Doctor Dashboard - My Patients</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-soft: #e0ecff;
+            --bg: #f3f4f6;
+            --white: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --success: #16a34a;
+            --radius-lg: 18px;
+            --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: #020617;
+            color: #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 18px;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #38bdf8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .sidebar-logo-text {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            margin: 12px 4px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #9ca3af;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .sidebar-link i {
+            width: 18px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .sidebar-link:hover {
+            background: #111827;
+            color: #e5e7eb;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(135deg, #2563eb, #38bdf8);
+            color: white;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.4);
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #111827;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #6b7280;
+        }
+
+        .sidebar-badge {
+            background: rgba(37, 99, 235, 0.15);
+            color: #bfdbfe;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+        }
+
+        /* MAIN AREA */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 18px 20px;
+            gap: 16px;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .topbar-left h2 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .topbar-left p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--white);
+            padding: 6px 10px;
+            border-radius: 999px;
+            box-shadow: var(--shadow-soft);
+            min-width: 240px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: none;
+            background: var(--white);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .icon-btn.badge-dot::after {
+            content: "";
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #ef4444;
+            position: relative;
+            left: 8px;
+            top: -8px;
+            border: 2px solid white;
+        }
+
+        .doctor-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--white);
+            padding: 5px 10px;
+            border-radius: 999px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .doctor-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: #dbeafe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d4ed8;
+        }
+
+        .doctor-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .doctor-info span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .doctor-info strong {
+            font-size: 13px;
+        }
+
+        /* CONTENT AREA */
+        .content {
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topbar-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .search-box {
+                flex: 1;
+            }
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* PATIENT LIST */
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-row select,
+        .filter-row input {
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            font-size: 12px;
+            outline: none;
+            min-width: 90px;
+        }
+
+        .chip {
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 11px;
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .patient-table thead {
+            background: #f9fafb;
+        }
+
+        .patient-table th,
+        .patient-table td {
+            padding: 8px 6px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .patient-table tbody tr {
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .patient-table tbody tr:hover {
+            background: #eff6ff;
+        }
+
+        .patient-table tbody tr.active-row {
+            background: #dbeafe;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+        }
+
+        .status-badge.green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.yellow {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .pill-age {
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #f3f4f6;
+            font-size: 11px;
+        }
+
+        /* PATIENT + PRESCRIPTION PANEL */
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .patient-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: #fee2e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #b91c1c;
+        }
+
+        .patient-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .patient-meta span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .patient-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .vitals-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .vital-card {
+            flex: 1;
+            min-width: 110px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .vital-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .vital-value {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+            margin-top: 4px;
+        }
+
+        .tab-btn {
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 999px 999px 0 0;
+            color: var(--text-muted);
+        }
+
+        .tab-btn.active {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-bottom-color: var(--white);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 3px;
+            color: var(--text-muted);
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        textarea,
+        select {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 7px 9px;
+            font-size: 12px;
+            outline: none;
+            resize: vertical;
+            min-height: 36px;
+            background: #f9fafb;
+        }
+
+        textarea {
+            min-height: 60px;
+        }
+
+        .medicines-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .medicines-grid-header,
+        .medicines-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr auto;
+            gap: 6px;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .medicines-grid-header {
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .medicines-row input {
+            font-size: 11px;
+            padding: 6px 8px;
+            min-height: 32px;
+        }
+
+        .small-btn,
+        .primary-btn,
+        .outline-btn {
+            border-radius: 999px;
+            border: none;
+            font-size: 11px;
+            padding: 6px 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .small-btn {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .outline-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .actions-row {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            font-size: 12px;
+        }
+
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .history-chip {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .history-item p {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1.5fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .summary-box {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #f9fafb;
+            padding: 10px 11px;
+            font-size: 12px;
+        }
+
+        .summary-box-title {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fa-solid fa-stethoscope"></i>
+                </div>
+                <div class="sidebar-logo-text">RM HealthCare</div>
+            </div>
+
+            <div class="sidebar-section-title">Main</div>
+            <ul class="sidebar-nav">
+                <li><a class="sidebar-link" href="dashboard_overview.html"><i
+                            class="fa-solid fa-chart-line"></i>Dashboard</a></li>
+                <li><a class="sidebar-link" href="appointments_view.html"><i
+                            class="fa-solid fa-calendar-check"></i>Appointments</a></li>
+                <li><a class="sidebar-link active" href="doctor_dashboard.html"><i class="fa-solid fa-user-group"></i>My
+                        Patients</a></li>
+                <li><a class="sidebar-link" href="messages.html"><i class="fa-solid fa-comment-dots"></i>Messages</a>
+                </li>
+            </ul>
+
+            <div class="sidebar-section-title">System</div>
+            <ul class="sidebar-nav">
+                <li><a class="sidebar-link" href="settings.html"><i class="fa-solid fa-gear"></i>Settings</a></li>
+                <li><a class="sidebar-link" href="#" onclick="logout()"><i
+                            class="fa-solid fa-right-from-bracket"></i>Logout</a></li>
+            </ul>
+
+            <div class="sidebar-bottom">
+                <span>Doctor Panel</span>
+                <span class="sidebar-badge">v1.0</span>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+            <!-- TOPBAR -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h2>My Patients</h2>
+                    <p>Today’s consultations & prescriptions overview</p>
+                </div>
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search patient, ID, phone..." />
+                    </div>
+                    <button class="icon-btn badge-dot">
+                        <i class="fa-solid fa-bell"></i>
+                    </button>
+                    <div class="doctor-profile">
+                        <div class="doctor-avatar">DR</div>
+                        <div class="doctor-info">
+                            <strong>Dr. Rupam Mandal</strong>
+                            <span>MBBS, MD (Medicine)</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 11px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="content">
+                <!-- LEFT: PATIENT LIST -->
+                <section class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">All Patients</div>
+                            <div class="card-subtitle">Queue & appointment list</div>
+                        </div>
+                        <span class="chip"><i class="fa-solid fa-circle"></i> 12 waiting</span>
+                    </div>
+
+                    <div class="filter-row">
+                        <select>
+                            <option>All status</option>
+                            <option>Waiting</option>
+                            <option>In Consultation</option>
+                            <option>Completed</option>
+                        </select>
+                        <select>
+                            <option>All slots</option>
+                            <option>Morning</option>
+                            <option>Afternoon</option>
+                            <option>Evening</option>
+                        </select>
+                        <input type="text" placeholder="Filter by name or ID" id="patientFilterInput" />
+                    </div>
+
+                    <table class="patient-table" id="patientTable">
+                        <thead>
+                            <tr>
+                                <th>Pt. ID</th>
+                                <th>Name</th>
+                                <th>Age / Sex</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows will be injected by JS -->
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- RIGHT: PATIENT DETAILS + PRESCRIPTION -->
+                <section class="card">
+                    <!-- Patient header -->
+                    <div class="patient-header">
+                        <div class="patient-avatar" id="patientAvatar">P</div>
+                        <div class="patient-meta">
+                            <strong id="patientName">Select a patient</strong>
+                            <span id="patientInfo">Patient details will appear here</span>
+                            <div class="patient-tags" id="patientTags">
+                                <!-- dynamic tags -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vitals -->
+                    <div class="vitals-row" id="vitalsRow">
+                        <div class="vital-card">
+                            <div class="vital-label">Blood Pressure</div>
+                            <div class="vital-value" id="vitalBP">-</div>
+                        </div>
+                        <div class="vital-card">
+                            <div class="vital-label">Pulse</div>
+                            <div class="vital-value" id="vitalPulse">-</div>
+                        </div>
+                        <div class="vital-card">
+                            <div class="vital-label">SpO₂</div>
+                            <div class="vital-value" id="vitalSpo2">-</div>
+                        </div>
+                        <div class="vital-card">
+                            <div class="vital-label">Temp</div>
+                            <div class="vital-value" id="vitalTemp">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="summaryTab">Summary</button>
+                        <button class="tab-btn" data-tab="historyTab">Prescription History</button>
+                        <button class="tab-btn" data-tab="newRxTab">New Prescription</button>
+                    </div>
+
+                    <!-- TAB: SUMMARY -->
+                    <div class="tab-content active" id="summaryTab">
+                        <div class="summary-grid">
+                            <div class="summary-box">
+                                <div class="summary-box-title">Chief Complaints</div>
+                                <p id="summaryComplaints">No patient selected.</p>
+                            </div>
+                            <div class="summary-box">
+                                <div class="summary-box-title">Past History</div>
+                                <p id="summaryHistory">No patient selected.</p>
+                            </div>
+                            <div class="summary-box">
+                                <div class="summary-box-title">Allergies</div>
+                                <p id="summaryAllergies">No patient selected.</p>
+                            </div>
+                            <div class="summary-box">
+                                <div class="summary-box-title">Current Medications</div>
+                                <p id="summaryMeds">No patient selected.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: PRESCRIPTION HISTORY -->
+                    <div class="tab-content" id="historyTab">
+                        <div class="card-subtitle" style="margin-bottom: 4px;">
+                            Last prescriptions for this patient
+                        </div>
+                        <div class="history-list" id="historyList">
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                No patient selected.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: NEW PRESCRIPTION -->
+                    <div class="tab-content" id="newRxTab">
+                        <div class="card-subtitle" style="margin-bottom: 8px;">
+                            Create new prescription for this visit
+                        </div>
+
+                        <div class="form-grid">
+                            <div>
+                                <label>Visit Date</label>
+                                <input type="date" id="rxDate" />
+                            </div>
+                            <div>
+                                <label>Visit Time</label>
+                                <input type="time" id="rxTime" />
+                            </div>
+                            <div>
+                                <label>Chief Complaint</label>
+                                <input type="text" id="rxComplaint" placeholder="Ex: Fever, cough for 3 days" />
+                            </div>
+                            <div>
+                                <label>Provisional Diagnosis</label>
+                                <input type="text" id="rxDiagnosis" placeholder="Ex: Viral fever" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label>Examination / Findings</label>
+                            <textarea id="rxFindings"
+                                placeholder="Clinical findings, physical examination notes..."></textarea>
+                        </div>
+
+                        <div class="medicines-header">
+                            <strong style="font-size: 13px;">Medicines</strong>
+                            <button class="outline-btn" id="addMedicineBtn">
+                                <i class="fa-solid fa-plus"></i> Add medicine
+                            </button>
+                        </div>
+
+                        <div class="medicines-grid-header">
+                            <div>Medicine name</div>
+                            <div>Dose</div>
+                            <div>Frequency</div>
+                            <div>Duration</div>
+                            <div>Instructions</div>
+                            <div></div>
+                        </div>
+
+                        <div id="medicinesContainer">
+                            <!-- medicine rows will be added here -->
+                        </div>
+
+                        <div class="form-grid" style="margin-top: 10px;">
+                            <div>
+                                <label>Investigations / Tests</label>
+                                <textarea id="rxTests" placeholder="CBC, LFT, X-Ray chest PA view, etc."></textarea>
+                            </div>
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label>Advice</label>
+                                    <button class="small-btn" type="button" onclick="toggleDietSearch()"
+                                        style="background:#e0f2fe; color:#0284c7;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Diet Search
+                                    </button>
+                                </div>
+                                <textarea id="rxAdvice" placeholder="Diet, rest, review instructions etc."></textarea>
+
+                                <!-- AI Search Panel (Hidden by default) -->
+                                <div id="aiDietPanel"
+                                    style="display:none; margin-top:8px; padding:10px; background:#f0f9ff; border-radius:10px; border:1px solid #bae6fd;">
+                                    <div class="search-box"
+                                        style="width:100%; border:1px solid #bae6fd; box-shadow:none;">
+                                        <i class="fa-solid fa-robot" style="color:#0284c7;"></i>
+                                        <input type="text" id="aiDietInput"
+                                            placeholder="Ask for diet... (e.g. 'Diabetes', 'Fever')"
+                                            onkeydown="if(event.key === 'Enter') runDietSearch()">
+                                        <i class="fa-solid fa-paper-plane" style="cursor:pointer; color:#0284c7;"
+                                            onclick="runDietSearch()"></i>
+                                    </div>
+                                    <div id="aiDietResults"
+                                        style="margin-top:8px; font-size:11px; max-height:100px; overflow-y:auto; color:#0c4a6e;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div>
+                                <label>Follow-up Date</label>
+                                <input type="date" id="rxFollowupDate" />
+                            </div>
+                            <div>
+                                <label>Follow-up Note</label>
+                                <input type="text" id="rxFollowupNote"
+                                    placeholder="Review with reports / if no improvement" />
+                            </div>
+                        </div>
+
+                        <div class="actions-row">
+                            <button class="outline-btn" type="button" onclick="downloadPrescriptionPDF()">
+                                <i class="fa-solid fa-file-pdf"></i> Download PDF
+                            </button>
+                            <button class="primary-btn" type="button" id="saveRxBtn">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Prescription
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global State
+        let currentDoctor = null;
+        let patients = [];
+        let selectedPatientId = null;
+
+        // Element refs
+        const patientTableBody = document.querySelector("#patientTable tbody");
+        const patientFilterInput = document.getElementById("patientFilterInput");
+
+        const patientAvatar = document.getElementById("patientAvatar");
+        const patientName = document.getElementById("patientName");
+        const patientInfo = document.getElementById("patientInfo");
+        const patientTags = document.getElementById("patientTags");
+
+        const vitalBP = document.getElementById("vitalBP");
+        const vitalPulse = document.getElementById("vitalPulse");
+        const vitalSpo2 = document.getElementById("vitalSpo2");
+        const vitalTemp = document.getElementById("vitalTemp");
+
+        const summaryComplaints = document.getElementById("summaryComplaints");
+        const summaryHistory = document.getElementById("summaryHistory");
+        const summaryAllergies = document.getElementById("summaryAllergies");
+        const summaryMeds = document.getElementById("summaryMeds");
+
+        const historyList = document.getElementById("historyList");
+
+        const tabs = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        const medicinesContainer = document.getElementById("medicinesContainer");
+        const addMedicineBtn = document.getElementById("addMedicineBtn");
+        const saveRxBtn = document.getElementById("saveRxBtn");
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!checkAuth()) return;
+            initTabs();
+            initMedicines();
+            await loadPatients();
+        });
+
+        // 1. Auth Check
+        function checkAuth() {
+            const token = sessionStorage.getItem('doctor_token');
+            const info = sessionStorage.getItem('doctor_info');
+            if (!token || !info) {
+                location.href = '/doctor_login';
+                return false;
+            }
+            currentDoctor = JSON.parse(info);
+            // Update Topbar Profile
+            const docName = document.querySelector('.doctor-info strong');
+            const docSpec = document.querySelector('.doctor-info span');
+            if (docName) docName.innerText = currentDoctor.name || currentDoctor.username;
+            if (docSpec) docSpec.innerText = currentDoctor.specialization || currentDoctor.category || 'Doctor';
+            return true;
+        }
+
+        function logout() {
+            sessionStorage.removeItem('doctor_token');
+            sessionStorage.removeItem('doctor_info');
+            // Cleanup local storage too if it exists from previous version
+            localStorage.removeItem('doctor_token');
+            localStorage.removeItem('doctor_info');
+            location.href = '/doctor_login';
+        }
+
+        // 2. Tabs Logic
+        function initTabs() {
+            tabs.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    tabs.forEach(t => t.classList.remove("active"));
+                    tabContents.forEach(c => c.classList.remove("active"));
+                    btn.classList.add("active");
+                    document.getElementById(btn.dataset.tab).classList.add("active");
+                });
+            });
+        }
+
+        // 3. Load Patients Queue
+        async function loadPatients() {
+            try {
+                // Fetch today's appointments for this doctor
+                const today = new Date().toISOString().split('T')[0];
+                const res = await fetch(`/api/doctor/appointments?doctor_id=${currentDoctor.id}`);
+                const data = await res.json();
+
+                if (data.appointments) {
+                    patients = data.appointments.map(a => ({
+                        id: a.id, // Appointment ID
+                        pat_id: a.pat_id || a.patient_phone, // Patient Identifier
+                        name: a.patient_name,
+                        phone: a.patient_phone,
+                        age: a.patient_age || '-',
+                        sex: a.patient_sex || '',
+                        time: a.appointment_time,
+                        status: a.status || 'Waiting',
+                        statusType: (a.status === 'Completed') ? 'green' : (a.status === 'Cancelled' ? 'red' : 'yellow'),
+                        bp: a.vital_bp || '-',
+                        pulse: a.vital_pulse || '-',
+                        spo2: a.vital_spo2 || '-',
+                        temp: a.vital_temp || '-',
+                        complaints: a.symptoms || '—',
+                        history: '—', // This would come from full history fetch
+                        allergies: '—',
+                        meds: '—'
+                    }));
+                } else {
+                    patients = [];
+                }
+                renderPatients();
+            } catch (err) {
+                console.error("Failed to load patients", err);
+                patientTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red">Connection failed</td></tr>`;
+            }
+        }
+
+        function renderPatients(filterText = "") {
+            patientTableBody.innerHTML = "";
+            const ft = filterText.toLowerCase();
+
+            if (patients.length === 0) {
+                patientTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px" class="muted">No appointments today</td></tr>`;
+                return;
+            }
+
+            patients.forEach((p) => {
+                if (!ft || p.name.toLowerCase().includes(ft) || String(p.id).toLowerCase().includes(ft)) {
+                    const tr = document.createElement("tr");
+                    tr.dataset.id = p.id;
+                    if (p.id === selectedPatientId) tr.classList.add("active-row");
+
+                    tr.innerHTML = `
+                        <td>#${p.id}</td>
+                        <td>${p.name}</td>
+                        <td><span class="pill-age">${p.age} / ${p.sex}</span></td>
+                        <td>${p.time || '-'}</td>
+                        <td><span class="status-badge ${p.statusType}">${p.status}</span></td>
+                    `;
+                    tr.addEventListener("click", () => selectPatient(p.id));
+                    patientTableBody.appendChild(tr);
+                }
+            });
+
+            // update counts
+            const waiting = patients.filter(x => x.status === 'Waiting').length;
+            const completed = patients.filter(x => x.status === 'Completed').length;
+            const chip = document.querySelector('.card-header .chip');
+            if (chip) chip.innerHTML = `<i class="fa-solid fa-circle"></i> ${waiting} waiting • ${completed} done`;
+        }
+
+        patientFilterInput.addEventListener("input", (e) => renderPatients(e.target.value));
+
+        // 4. Select Patient & Fetch History
+        async function selectPatient(id) {
+            selectedPatientId = id;
+            document.querySelectorAll("#patientTable tbody tr").forEach((row) => row.classList.remove("active-row"));
+            const activeRow = document.querySelector(`#patientTable tbody tr[data-id="${id}"]`);
+            if (activeRow) activeRow.classList.add("active-row");
+
+            const p = patients.find(x => x.id === id);
+            if (!p) return;
+
+            // Header
+            patientAvatar.textContent = p.name.charAt(0);
+            patientName.textContent = p.name;
+            patientInfo.textContent = `${p.age} years • ${p.sex} • ${p.phone}`;
+            patientTags.innerHTML = `<span class="tag">Appt ID: #${p.id}</span>`;
+
+            // Vitals (Current Appt)
+            vitalBP.textContent = p.bp;
+            vitalPulse.textContent = p.pulse;
+            vitalSpo2.textContent = p.spo2;
+            vitalTemp.textContent = p.temp;
+
+            // Summary (Just placeholder from current obj for now)
+            summaryComplaints.textContent = p.complaints;
+            summaryHistory.textContent = 'Loading...';
+
+            // Fetch History from Server
+            await loadPatientHistory(p.pat_id || p.phone, p.id);
+
+            // Clear New Rx Form
+            clearRxForm();
+        }
+
+        async function loadPatientHistory(identifier, currentApptId) {
+            historyList.innerHTML = '<div style="padding:10px;text-align:center">Loading history...</div>';
+            try {
+                const res = await fetch(`/api/doctor/patient-history?patient_phone=${identifier}`);
+                const data = await res.json();
+
+                historyList.innerHTML = "";
+                if (!data.history || data.history.length === 0) {
+                    historyList.innerHTML = '<div style="font-size: 12px; color: var(--text-muted);">No previous prescriptions found.</div>';
+                    summaryHistory.innerText = "No past history.";
+                    summaryMeds.innerText = "—";
+                    return;
+                }
+
+                // Populate History Tab
+                data.history.forEach(h => {
+                    // Don't show current appt in history if it's just created
+                    if (h.id == currentApptId && h.status !== 'Completed') return;
+
+                    let medsText = "";
+                    let medsArr = [];
+                    try {
+                        medsArr = JSON.parse(h.medicines || '[]');
+                        medsText = medsArr.map(x => x.name).join(", ");
+                    } catch (e) { }
+
+                    const div = document.createElement("div");
+                    div.className = "history-item";
+                    div.innerHTML = `
+                        <div class="history-item-header">
+                            <span><strong>${h.appointment_date ? h.appointment_date.split('T')[0] : ''}</strong></span>
+                            <span class="history-chip">${h.diagnosis || 'Diagnosis Pending'}</span>
+                        </div>
+                        <p><strong>Rx:</strong> ${medsText || 'No Medicines'}</p>
+                        <p><strong>Dr:</strong> ${h.doctor_name}</p>
+                        <div style="text-align:right; margin-top:5px;">
+                            <button class="small-btn outline-btn" style="background:#fff">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                     `;
+
+                    // Attach print handler with this history item's data
+                    div.querySelector('button').addEventListener('click', (e) => {
+                        e.stopPropagation(); // prevent row click
+                        const historyData = {
+                            date: h.appointment_date ? h.appointment_date.split('T')[0] : '',
+                            diagnosis: h.diagnosis,
+                            advice: h.advice,
+                            medicines: medsArr,
+                            doctor_name: h.doctor_name, // history item might have different doctor
+                            patient_name: document.getElementById('patientName').innerText, // assuming same patient context
+                            patient_info: document.getElementById('patientInfo').innerText
+                        };
+                        downloadPrescriptionPDF(historyData);
+                    });
+
+                    historyList.appendChild(div);
+                });
+
+                // Update Summary Tab with *latest* past info
+                const lastVisit = data.history[0]; // Assuming sorted DESC
+                if (lastVisit) {
+                    summaryHistory.innerText = lastVisit.diagnosis || "—";
+                    // If meds exist, show them
+                    try {
+                        const mArr = JSON.parse(lastVisit.medicines || '[]');
+                        summaryMeds.innerText = mArr.map(x => `${x.name} (${x.dose})`).join(", ");
+                    } catch (e) { summaryMeds.innerText = "—"; }
+                }
+
+            } catch (e) {
+                console.error(e);
+                historyList.innerHTML = '<div style="color:red">Failed to load history</div>';
+            }
+        }
+
+
+        // 5. New Prescription Logic
+        function initMedicines() {
+            addMedicineBtn.addEventListener("click", addMedicineRow);
+            // add one row by default? No, let user add.
+        }
+
+        function addMedicineRow() {
+            const row = document.createElement("div");
+            row.className = "medicines-row";
+            row.innerHTML = `
+              <input type="text" class="med-name" placeholder="Paracetamol 500 mg" />
+              <input type="text" class="med-dose" placeholder="1 tab" />
+              <input type="text" class="med-freq" placeholder="TDS" />
+              <input type="text" class="med-dur" placeholder="5 days" />
+              <input type="text" class="med-instr" placeholder="After food" />
+              <button type="button" class="small-btn remove-btn">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            `;
+            row.querySelector(".remove-btn").addEventListener("click", () => row.remove());
+            medicinesContainer.appendChild(row);
+        }
+
+        function clearRxForm() {
+            document.getElementById('rxDate').valueAsDate = new Date();
+            document.getElementById('rxTime').value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            document.getElementById('rxComplaint').value = "";
+            document.getElementById('rxDiagnosis').value = "";
+            document.getElementById('rxFindings').value = "";
+            document.getElementById('rxTests').value = "";
+            document.getElementById('rxAdvice').value = "";
+            document.getElementById('rxFollowupDate').value = "";
+            document.getElementById('rxFollowupNote').value = "";
+            medicinesContainer.innerHTML = "";
+            addMedicineRow(); // Add one empty row
+        }
+
+        // SAVE
+        saveRxBtn.addEventListener("click", async () => {
+            if (!selectedPatientId) { alert("Select a patient first"); return; }
+
+            // Gather Data
+            const medRows = document.querySelectorAll('.medicines-row');
+            const medicines = [];
+            medRows.forEach(r => {
+                const name = r.querySelector('.med-name').value;
+                if (name) {
+                    medicines.push({
+                        name: name,
+                        dose: r.querySelector('.med-dose').value,
+                        freq: r.querySelector('.med-freq').value,
+                        dur: r.querySelector('.med-dur').value,
+                        instr: r.querySelector('.med-instr').value,
+                    });
+                }
+            });
+
+            const payload = {
+                id: selectedPatientId,
+                doctor_id: currentDoctor.id,
+                doctor_name: currentDoctor.name,
+                symptoms: document.getElementById('rxComplaint').value,
+                diagnosis: document.getElementById('rxDiagnosis').value,
+                medicines: medicines,
+                lab_tests: document.getElementById('rxTests').value,
+                advice: document.getElementById('rxAdvice').value,
+                follow_up_date: document.getElementById('rxFollowupDate').value,
+
+                // Also update vitals if user edited them (Need input fields for vitals if we want to allow editing. 
+                // For now, let's assume doctor might type them in Findings or we add inputs later. 
+                // Wait, design had vitals as text. Let's send current vitals back or empty if not editable)
+                vital_bp: vitalBP.textContent !== '-' ? vitalBP.textContent : '',
+                vital_pulse: vitalPulse.textContent !== '-' ? vitalPulse.textContent : '',
+                vital_spo2: vitalSpo2.textContent !== '-' ? vitalSpo2.textContent : '',
+                vital_temp: vitalTemp.textContent !== '-' ? vitalTemp.textContent : ''
+            };
+
+            saveRxBtn.innerText = "Saving...";
+            saveRxBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/doctor/prescribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert("Prescription saved successfully!");
+                    saveRxBtn.innerText = "Saved";
+
+                    // Refresh List
+                    await loadPatients();
+                    // Reselect patient to show updated status
+                    selectPatient(selectedPatientId);
+                } else {
+                    alert("Error: " + (json.error || 'Unknown error'));
+                    saveRxBtn.innerText = "Save Prescription";
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error occurred");
+                saveRxBtn.innerText = "Save Prescription";
+            } finally {
+                saveRxBtn.disabled = false;
+            }
+        });
+
+
+
+        // --- AI DIET SEARCH ---
+        const dietDB = {
+            "diabetes": "Avoid sugar, sweets, white rice, and potatoes. Recommended: Brown rice, oats, bitter gourd, green leafy vegetables, salads.",
+            "hypertension": "Low salt diet. Avoid pickles, papad, processed foods. Recommended: Fruits, vegetables, low-fat dairy.",
+            "fever": "Plenty of fluids (water, soup, coconut water). Light home-cooked food like khichdi. Avoid spicy/oily food.",
+            "cough": "Warm water, ginger tea, honey. Avoid cold drinks, ice cream, curd.",
+            "cold": "Warm water, ginger tea, honey. Avoid cold drinks, ice cream, curd.",
+            "gastritis": "Eat small frequent meals. Avoid spicy, oily, acidic foods. Drink cold milk, coconut water.",
+            "diarrhea": "ORS, hydration. Eat banana, curd rice, khichdi. Avoid milk and spicy foods.",
+            "anemia": "Iron-rich foods: Spinach, dates, pomegranate, jaggery, beetroot, red meat.",
+            "weight loss": "High protein, low carb. Avoid junk food. Eat salads, sprouts, pulses.",
+            "general": "Balanced diet with fruits and vegetables. Drink 3-4 liters of water daily."
+        };
+
+        function toggleDietSearch() {
+            const panel = document.getElementById('aiDietPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function runDietSearch() {
+            const input = document.getElementById('aiDietInput');
+            const results = document.getElementById('aiDietResults');
+            const query = input.value.toLowerCase().trim();
+
+            if (!query) return;
+
+            results.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+
+            // Simulate AI delay
+            setTimeout(() => {
+                let found = null;
+                // Simple keyword matching for "AI"
+                for (const [key, val] of Object.entries(dietDB)) {
+                    if (query.includes(key) || key.includes(query)) {
+                        found = val;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    results.innerHTML = `<div><strong><i class="fa-solid fa-check"></i> Suggestion:</strong> ${found} <span style="cursor:pointer;color:blue;margin-left:5px" onclick="document.getElementById('rxAdvice').value += ' ${found}'">(Add)</span></div>`;
+                } else {
+                    // Default fallback
+                    results.innerHTML = `<div><strong>Suggestion:</strong> Eat fresh home cooked food, avoid junk. <span style="cursor:pointer;color:blue;margin-left:5px" onclick="document.getElementById('rxAdvice').value += ' Eat fresh home cooked food, avoid junk.'">(Add)</span></div>`;
+                }
+            }, 600);
+        }
+
+        // --- PDF DOWNLOAD ---
+        function downloadPrescriptionPDF(data = null) {
+            if (!selectedPatientId && !data) { alert("Please select a patient first."); return; }
+
+            // 1. Resolve Data Sources
+            // If data is passed (history), use it. otherwise scrape DOM.
+            const isHistory = !!data;
+
+            const pName = isHistory ? data.patient_name : document.getElementById('patientName').innerText;
+            const pInfo = isHistory ? data.patient_info : document.getElementById('patientInfo').innerText;
+            // For date: history has 'date' string. form has input 'rxDate'.
+            const dateVal = isHistory ? data.date : document.getElementById('rxDate').value;
+            const date = dateVal || new Date().toISOString().split('T')[0];
+
+            const diagnosis = isHistory ? (data.diagnosis || '') : document.getElementById('rxDiagnosis').value;
+            const advice = isHistory ? (data.advice || '') : document.getElementById('rxAdvice').value;
+            const tests = isHistory ? (data.lab_tests || '') : document.getElementById('rxTests').value;
+
+            const doctorName = isHistory ? data.doctor_name : (currentDoctor.name || currentDoctor.username || 'Doctor');
+            const doctorSpec = currentDoctor.specialization || 'General Physician';
+
+            // medicines
+            let medsList = [];
+            if (isHistory && data.medicines) {
+                medsList = data.medicines;
+            } else {
+                document.querySelectorAll('.medicines-row').forEach(row => {
+                    const name = row.querySelector('.med-name').value;
+                    if (name) {
+                        medsList.push({
+                            name: name,
+                            dose: row.querySelector('.med-dose').value,
+                            freq: row.querySelector('.med-freq').value,
+                            dur: row.querySelector('.med-dur').value,
+                            instr: row.querySelector('.med-instr').value,
+                        });
+                    }
+                });
+            }
+
+            // 2. Build Modern HTML Template
+            const element = document.createElement('div');
+            // Move off-screen
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            element.style.top = '0';
+            element.style.width = '800px';
+            // Important: text-align left default
+            element.style.textAlign = 'left';
+            document.body.appendChild(element);
+
+            const primaryColor = "#0f766e"; // Teal-700
+            const secondaryColor = "#f0fdfa"; // Teal-50
+            const borderColor = "#ccfbf1"; // Teal-100
+
+            let medsRows = medsList.map((m, i) => `
+                <tr style="border-bottom: 1px solid #e5e7eb; background-color: ${i % 2 === 0 ? '#fff' : '#f9fafb'};">
+                    <td style="padding: 12px 8px; font-weight: 600; color:#1f2937;">${m.name}</td>
+                    <td style="padding: 12px 8px;">${m.dose || '-'}</td>
+                    <td style="padding: 12px 8px;">${m.freq || '-'}</td>
+                    <td style="padding: 12px 8px;">${m.dur || '-'}</td>
+                    <td style="padding: 12px 8px; font-style: italic; color:#4b5563;">${m.instr || '-'}</td>
+                </tr>
+            `).join('');
+
+            if (medsList.length === 0) {
+                medsRows = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#9ca3af;">No medicines prescribed.</td></tr>`;
+            }
+
+            element.innerHTML = `
+                <div style="font-family: 'Poppins', sans-serif; color: #374151; line-height: 1.5; background:white; padding:30px;">
+                    
+                    <!-- HEADER -->
+                    <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 30px;">
+                        <div>
+                            <h1 style="color: ${primaryColor}; margin: 0; font-size: 24px; font-weight: 700; line-height:1.2;">DR. ${doctorName.toUpperCase()}</h1>
+                            <p style="margin: 5px 0 0; color: #6b7280; font-size: 14px; font-weight: 500;">${doctorSpec.toUpperCase()}</p>
+                            <p style="margin: 2px 0 0; color: #9ca3af; font-size: 12px;">Reg. No: 12345678</p> 
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="background: ${primaryColor}; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 10px;">PRESCRIPTION</div>
+                            <p style="margin: 0; font-size: 13px;"><strong>Date:</strong> ${date}</p>
+                            <p style="margin: 2px 0 0; font-size: 13px;"><strong>ID:</strong> #${selectedPatientId}</p>
+                        </div>
+                    </div>
+
+                    <!-- PATIENT INFO -->
+                    <div style="background: ${secondaryColor}; border: 1px solid ${borderColor}; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; margin-bottom: 30px;">
+                        <div>
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight:600;">Patient Name</span>
+                            <h3 style="margin: 4px 0 0; font-size: 18px; color: #0f172a; font-weight:600;">${pName}</h3>
+                        </div>
+                        <div>
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight:600;">Patient Details</span>
+                            <p style="margin: 4px 0 0; font-size: 14px; color: #334155;">${pInfo}</p>
+                        </div>
+                        ${diagnosis ? `
+                        <div style="text-align:right;">
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight:600;">Diagnosis</span>
+                            <p style="margin: 4px 0 0; font-size: 14px; font-weight: 600; color: ${primaryColor};">${diagnosis}</p>
+                        </div>` : ''}
+                    </div>
+
+                    <!-- MEDICINES -->
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: ${primaryColor}; font-size: 16px; border-bottom: 2px solid ${borderColor}; padding-bottom: 8px; margin-bottom: 15px; text-transform:uppercase; font-weight:600; display:flex; align-items:center;">
+                            <span style="font-size:24px; font-family:serif; margin-right:8px; font-weight:400;">Rx</span> Medicines
+                        </h4>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background-color: ${primaryColor}; color: white;">
+                                    <th style="padding: 10px 8px; text-align: left; border-top-left-radius: 6px;">Medicine Name</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Dose</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Frequency</th>
+                                    <th style="padding: 10px 8px; text-align: left;">Duration</th>
+                                    <th style="padding: 10px 8px; text-align: left; border-top-right-radius: 6px;">Instructions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${medsRows}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- ADVICE & TESTS GRID -->
+                    <div style="display: flex; gap: 20px;">
+                        ${advice ? `
+                        <div style="flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; background:#fafaf9;">
+                            <h5 style="margin: 0 0 10px 0; color: ${primaryColor}; font-size: 13px; text-transform: uppercase; font-weight:700;">Medical Advice</h5>
+                            <p style="margin: 0; font-size: 13px; color: #374151; white-space: pre-wrap; line-height:1.6;">${advice}</p>
+                        </div>` : ''}
+
+                        ${tests ? `
+                        <div style="flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; background:#fafaf9;">
+                            <h5 style="margin: 0 0 10px 0; color: ${primaryColor}; font-size: 13px; text-transform: uppercase; font-weight:700;">Recommended Tests</h5>
+                            <p style="margin: 0; font-size: 13px; color: #374151; white-space: pre-wrap; line-height:1.6;">${tests}</p>
+                        </div>` : ''}
+                    </div>
+
+                    <!-- FOOTER -->
+                    <div style="margin-top: 60px; padding-top: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div style="font-size: 11px; color: #9ca3af;">
+                            <p style="margin: 0;">Powered by <strong>RM HealthCare AI</strong></p>
+                            <p style="margin: 2px 0 0;">This is a computer-generated prescription.</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <!-- Placeholder Signature -->
+                            <div style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #374151; margin-bottom: 5px;">Dr. ${doctorName}</div>
+                            <div style="border-top: 1px solid #9ca3af; width: 200px; margin: 0 auto;"></div>
+                            <p style="margin: 5px 0 0; font-size: 12px; color: #6b7280;">Doctor's Signature</p>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            var opt = {
+                margin: 0, // No margin since we handle padding in CSS
+                filename: `Prescription_${pName.replace(/\s+/g, '_')}_${date}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Generate
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element); // Cleanup
+            }).catch(err => {
+                console.error("PDF generation failed:", err);
+                alert("Could not generate PDF. Please check console.");
+                document.body.removeChild(element);
+            });
+        }
+
+    </script>
+</body>
+
+</html>
+```

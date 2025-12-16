@@ -1,0 +1,90 @@
+<!-- AI Chat Widget - Minimized by Default -->
+<div id="ai-chat-widget" class="ai-chat-widget" style="display: none;">
+    <!-- Header with Gradient -->
+    <div class="chat-header">
+        <div class="chat-title-section">
+            <div class="chat-icon-wrapper">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div>
+                <div class="chat-title">RM Healthcare AI</div>
+                <div class="chat-subtitle">Online Assistant</div>
+            </div>
+        </div>
+        <div class="chat-controls">
+            <button id="chat-minimize-btn" class="chat-btn-icon" title="Minimize">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button id="chat-close-btn" class="chat-btn-icon" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Disclaimer Banner -->
+    <div class="chat-disclaimer">
+        <i class="fas fa-info-circle"></i>
+        <span>⚠️ For informational purposes only. Always consult real doctors for medical decisions.</span>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="chat-messages" id="chat-messages">
+        <div class="message bot-message">
+            <div class="message-content">
+                <div class="greeting-emoji">👋</div>
+                <div class="greeting-text">
+                    <strong>Hello! I'm your AI Assistant</strong>
+                    <p>I can help with appointment booking, general health info, prescription guidance & hospital details.</p>
+                    <p><small>💡 Note: I can't replace professional medical advice.</small></p>
+                </div>
+            </div>
+            <small class="message-time">Just now</small>
+        </div>
+    </div>
+
+    <!-- Prescription Preview -->
+    <div class="chat-prescription-preview" id="prescription-preview" style="display: none;">
+        <div class="preview-header">
+            <div class="preview-title">📄 Prescription Uploaded</div>
+            <button class="clear-prescription-btn" onclick="clearPrescription()" title="Remove">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        <div class="preview-text" id="prescription-text"></div>
+    </div>
+
+    <!-- Input Footer -->
+    <div class="chat-footer">
+        <div class="chat-input-group">
+            <input 
+                type="text" 
+                id="chat-input" 
+                class="chat-input" 
+                placeholder="Ask me anything..."
+                onkeypress="handleChatKeyPress(event)"
+            >
+            <label class="file-upload-label" title="Upload Prescription">
+                <i class="fas fa-paperclip"></i>
+                <input 
+                    type="file" 
+                    id="prescription-file" 
+                    class="file-input-hidden" 
+                    accept="image/*,.pdf"
+                    onchange="handlePrescriptionUpload(event)"
+                    style="display: none;"
+                >
+            </label>
+            <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()" title="Send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="chat-footer-info">
+            <small>💬 Questions? Ask away!</small>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Chat Button (Icon Only - shown by default) -->
+<button id="chat-toggle-btn" class="chat-toggle-btn" onclick="toggleChat()" title="Open Chat">
+    <i class="fas fa-comments"></i>
+</button>
