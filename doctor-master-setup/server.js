@@ -825,6 +825,10 @@ appPublic.get('/api/doctor/appointments', async (req, res) => {
 // Save a prescription for an appointment (doctor can post). Will try to add columns if missing.
 // Save a prescription for an appointment (doctor can post).
 appPublic.post('/api/doctor/prescribe', async (req, res) => {
+    console.log("------------------------------------------");
+    console.log("Received /api/doctor/prescribe request (Public Port)");
+    console.log("Request Body:", JSON.stringify(req.body, null, 2)); // DEBUG: Check strictly what arrives
+    console.log("------------------------------------------");
     try {
         const {
             id, doctor_id, doctor_name,
@@ -833,6 +837,34 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
+
+        // 0. Ensure Table Exists
+        try {
+            await dbPatient.promise().query(`
+                CREATE TABLE IF NOT EXISTS prescriptions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    appointment_id INT,
+                    doctor_id INT,
+                    doctor_name VARCHAR(255),
+                    patient_id INT,
+                    visit_date DATETIME,
+                    vital_bp VARCHAR(50),
+                    vital_pulse VARCHAR(50),
+                    vital_spo2 VARCHAR(50),
+                    vital_temp VARCHAR(50),
+                    symptoms TEXT,
+                    diagnosis TEXT,
+                    medicines LONGTEXT,
+                    lab_tests TEXT,
+                    advice TEXT,
+                    follow_up_date DATE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            `);
+            console.log("Table check passed (Public Port)");
+        } catch (tableErr) {
+            console.error("Table creation warning:", tableErr);
+        }
 
         // 1. Get patient_id from appointment to link it
         const [aptRows] = await dbPatient.promise().query('SELECT pat_id FROM appointments WHERE id=?', [id]);
@@ -1007,6 +1039,11 @@ appDoctor.get('/api/doctor/patient-history', async (req, res) => {
 });
 
 appDoctor.post('/api/doctor/prescribe', async (req, res) => {
+    console.log("------------------------------------------");
+    console.log("Received /api/doctor/prescribe request (Doctor Port)");
+    console.log("Request Body:", JSON.stringify(req.body, null, 2)); // DEBUG
+    console.log("------------------------------------------");
+
     try {
         const {
             id, doctor_id, doctor_name,
@@ -1015,6 +1052,34 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
+
+        // 0. Ensure Table Exists
+        try {
+            await dbPatient.promise().query(`
+                CREATE TABLE IF NOT EXISTS prescriptions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    appointment_id INT,
+                    doctor_id INT,
+                    doctor_name VARCHAR(255),
+                    patient_id INT,
+                    visit_date DATETIME,
+                    vital_bp VARCHAR(50),
+                    vital_pulse VARCHAR(50),
+                    vital_spo2 VARCHAR(50),
+                    vital_temp VARCHAR(50),
+                    symptoms TEXT,
+                    diagnosis TEXT,
+                    medicines LONGTEXT,
+                    lab_tests TEXT,
+                    advice TEXT,
+                    follow_up_date DATE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            `);
+        } catch (tableErr) {
+            console.error("Table creation warning:", tableErr);
+            // continue, maybe it exists or user lacks permission, but worth trying
+        }
 
         // 1. Get patient_id from appointment to link it
         const [aptRows] = await dbPatient.promise().query('SELECT pat_id FROM appointments WHERE id=?', [id]);
@@ -1036,7 +1101,11 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
         const [r] = await dbPatient.promise().query(insertSql, params);
 
         // 3. Update appointment status to Completed
-        await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]);
+        try {
+            await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]);
+        } catch (upErr) {
+            console.error("Failed to update status (non-fatal):", upErr);
+        }
 
         return res.json({ success: true, insertId: r.insertId });
     } catch (e) {

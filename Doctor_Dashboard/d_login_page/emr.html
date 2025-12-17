@@ -805,14 +805,16 @@
             // Collect Meds
             const meds = [];
             document.querySelectorAll('.med-row').forEach(r => {
-                const name = r.querySelector('.med-name').value;
+                const nameInput = r.querySelector('.med-name');
+                if (!nameInput) return; // Skip header or invalid rows
+                const name = nameInput.value;
                 if (name) {
                     meds.push({
                         name,
-                        dose: r.querySelector('.med-dose').value,
-                        freq: r.querySelector('.med-freq').value,
-                        dur: r.querySelector('.med-dur').value,
-                        instr: r.querySelector('.med-instr').value
+                        dose: r.querySelector('.med-dose')?.value || '',
+                        freq: r.querySelector('.med-freq')?.value || '',
+                        dur: r.querySelector('.med-dur')?.value || '',
+                        instr: r.querySelector('.med-instr')?.value || ''
                     });
                 }
             });
@@ -851,8 +853,13 @@
                 const json = await res.json();
 
                 if (json.success) {
-                    alert('Prescription Saved Successfully!');
-                    location.href = 'doctor_dashboard.html';
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
+                    btn.style.background = '#10b981'; // Green color for success
+                    btn.style.borderColor = '#10b981';
+
+                    setTimeout(() => {
+                        location.href = 'doctor_dashboard.html';
+                    }, 1000);
                 } else {
                     throw new Error(json.error || 'Unknown Error');
                 }
