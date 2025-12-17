@@ -653,15 +653,46 @@
             document.getElementById('vitalSpo2').value = pData.spo2 || '';
             document.getElementById('vitalTemp').value = pData.temp || '';
 
-            // Prefill knowns
-            document.getElementById('rxComplaint').value = pData.complaints !== '—' ? pData.complaints : '';
+            // Prefill knowns (Edit Mode)
+            document.getElementById('rxComplaint').value = pData.complaints !== '—' && pData.complaints ? pData.complaints : '';
+            if (pData.clinical_findings) document.getElementById('rxFindings').value = pData.clinical_findings;
+            if (pData.diagnosis) document.getElementById('rxDiagnosis').value = pData.diagnosis;
+            if (pData.advice) document.getElementById('rxAdvice').value = pData.advice;
+            if (pData.follow_up_date) document.getElementById('rxFollowupDate').value = pData.follow_up_date.split('T')[0];
 
             // Load History
             await loadHistory();
 
             // Init Meds & Tests
-            addMedicineRow();
-            addTestRow();
+            const medsContainer = document.getElementById('medicinesContainer');
+            medsContainer.innerHTML = ''; // Clear default
+
+            let hasMeds = false;
+            if (pData.medicines) {
+                try {
+                    const mList = typeof pData.medicines === 'string' ? JSON.parse(pData.medicines) : pData.medicines;
+                    if (Array.isArray(mList) && mList.length > 0) {
+                        hasMeds = true;
+                        mList.forEach(m => {
+                            addMedicineRow(m.name, m.dose, m.freq, m.dur, m.instr);
+                        });
+                    }
+                } catch (e) { console.error("Error parsing medicines", e); }
+            }
+            if (!hasMeds) addMedicineRow();
+
+            const testsContainer = document.getElementById('testsContainer');
+            testsContainer.innerHTML = ''; // Clear
+
+            let hasTests = false;
+            if (pData.lab_tests) {
+                const tList = pData.lab_tests.split(',').map(s => s.trim()).filter(x => x);
+                if (tList.length > 0) {
+                    hasTests = true;
+                    tList.forEach(t => addTestRow(t));
+                }
+            }
+            if (!hasTests) addTestRow();
 
             // Start timer
             startTimer();
@@ -696,20 +727,59 @@
                 }
 
                 data.history.forEach(h => {
-                    // Skip current session if it appears (rare since we are just creating it)
+                    // Skip current session if it appears
                     if (h.id === pData.id && h.status !== 'Completed') return;
 
                     const dateStr = h.appointment_date ? h.appointment_date.split('T')[0] : 'Unknown Date';
+
+                    // Parse details
+                    let medList = [];
+                    try { medList = JSON.parse(h.medicines || '[]'); } catch (e) { }
+                    const medsHtml = medList.length ? medList.map(m => `<li>${m.name} (${m.dose})</li>`).join('') : '<li>No meds</li>';
+                    const testsHtml = h.lab_tests ? h.lab_tests : 'None';
+                    const adviceHtml = h.advice ? h.advice : 'None';
+
                     const el = document.createElement('div');
                     el.className = 'history-item';
+                    el.style.cursor = 'pointer';
                     el.innerHTML = `
-                        <div class="history-date">${dateStr}</div>
-                        <div class="history-diag">${h.diagnosis || 'Consultation'}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                            Dr. ${h.doctor_name || 'Unknown'}
+                        <div class="history-item-header">
+                            <div class="history-date">${dateStr}</div>
+                            <div class="history-diag">${h.diagnosis || 'Consultation'}</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                                Dr. ${h.doctor_name || 'Unknown'}
+                            </div>
+                        </div>
+                        <div class="history-details hidden" style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; font-size:11px; color:var(--text-main);">
+                            <div style="margin-bottom:4px;"><strong>Rx:</strong> <ul style="padding-left:14px; margin:0;">${medsHtml}</ul></div>
+                            <div style="margin-bottom:4px;"><strong>Labs:</strong> ${testsHtml}</div>
+                            <div style="margin-bottom:6px;"><strong>Advice:</strong> ${adviceHtml}</div>
+                            
+                            <div style="text-align:right;">
+                                <button class="btn-outline btn-use-history" style="font-size:10px; padding:4px 8px;">
+                                    <i class="fa-solid fa-pen-nib"></i> Use / Repeat
+                                </button>
+                            </div>
                         </div>
                     `;
-                    // On click we could show details? For now just static list
+
+                    el.addEventListener('click', () => {
+                        const det = el.querySelector('.history-details');
+                        det.classList.toggle('hidden');
+                        el.style.background = det.classList.contains('hidden') ? '#fff' : '#f0f9ff';
+                    });
+
+                    // Handle "Use" button click
+                    const useBtn = el.querySelector('.btn-use-history');
+                    if (useBtn) {
+                        useBtn.addEventListener('click', (e) => {
+                            e.stopPropagation(); // prevent toggle
+                            if (confirm('Load this prescription into the main form? (Updates current data)')) {
+                                populateFromHistory(h);
+                            }
+                        });
+                    }
+
                     historyList.appendChild(el);
                 });
             } catch (e) {
@@ -718,24 +788,66 @@
             }
         }
 
+        // Helper: Populate from History
+        function populateFromHistory(h) {
+            // Diagnosis & Advice
+            if (h.diagnosis) document.getElementById('rxDiagnosis').value = h.diagnosis;
+            if (h.advice) document.getElementById('rxAdvice').value = h.advice;
+
+            // Clinical Findings & Complaints
+            if (h.symptoms) document.getElementById('rxComplaint').value = h.symptoms;
+            if (h.clinical_findings) document.getElementById('rxFindings').value = h.clinical_findings;
+
+            // Follow Up Date
+            if (h.follow_up_date) {
+                document.getElementById('rxFollowupDate').value = h.follow_up_date.split('T')[0];
+            }
+
+            // Meds
+            const medicinesContainer = document.getElementById("medicinesContainer");
+            medicinesContainer.innerHTML = "";
+            let medList = [];
+            // Handle both string JSON and pre-parsed object
+            try {
+                medList = typeof h.medicines === 'string' ? JSON.parse(h.medicines || '[]') : h.medicines;
+            } catch (e) { console.error("Med parse error", e); } // safe fail
+
+            if (Array.isArray(medList) && medList.length > 0) {
+                medList.forEach(m => addMedicineRow(m.name, m.dose, m.freq, m.dur, m.instr));
+            } else {
+                addMedicineRow();
+            }
+
+            // Labs
+            const testsContainer = document.getElementById("testsContainer");
+            testsContainer.innerHTML = "";
+            if (h.lab_tests) {
+                const tList = h.lab_tests.split(',').map(s => s.trim()).filter(x => x);
+                tList.forEach(t => addTestRow(t));
+            }
+            if (!testsContainer.hasChildNodes()) addTestRow();
+
+            // Notify
+            alert("Prescription Loaded! You can now modify and save.");
+        }
+
         // --- Medicines ---
         const medicinesContainer = document.getElementById("medicinesContainer");
         document.getElementById("addMedicineBtn").addEventListener("click", addMedicineRow);
 
-        function addMedicineRow() {
+        function addMedicineRow(name = '', dose = '', freq = '', dur = '', instr = '') {
             const row = document.createElement("div");
             row.className = "med-row";
             row.innerHTML = `
-              <input type="text" class="med-name" placeholder="Name" />
-              <input type="text" class="med-dose" placeholder="Dose" />
-              <input type="text" class="med-freq" placeholder="Freq" />
-              <input type="text" class="med-dur" placeholder="Dur" />
-              <input type="text" class="med-instr" placeholder="Instr" />
+              <input type="text" class="med-name" placeholder="Name" value="${name}" />
+              <input type="text" class="med-dose" placeholder="Dose" value="${dose}" />
+              <input type="text" class="med-freq" placeholder="Freq" value="${freq}" />
+              <input type="text" class="med-dur" placeholder="Dur" value="${dur}" />
+              <input type="text" class="med-instr" placeholder="Instr" value="${instr}" />
               <button type="button" class="btn-remove">
                 <i class="fa-solid fa-trash"></i>
               </button>
             `;
-            row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
             row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
             medicinesContainer.appendChild(row);
         }
@@ -825,6 +937,7 @@
                 doctor_id: currentDoctor.id,
                 doctor_name: currentDoctor.name,
                 symptoms: document.getElementById('rxComplaint').value,
+                clinical_findings: document.getElementById('rxFindings').value,
                 diagnosis: document.getElementById('rxDiagnosis').value,
                 medicines: meds,
                 lab_tests: Array.from(document.querySelectorAll('.test-name')).map(i => i.value.trim()).filter(x => x).join(', '),

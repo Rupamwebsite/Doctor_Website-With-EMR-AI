@@ -1330,7 +1330,14 @@
                 pulse: p.pulse,
                 spo2: p.spo2,
                 temp: p.temp,
-                complaints: p.complaints
+                // EMR Data (Existing)
+                complaints: p.symptoms || p.complaints,
+                clinical_findings: p.clinical_findings,
+                diagnosis: p.diagnosis,
+                medicines: p.medicines,
+                lab_tests: p.lab_tests,
+                advice: p.advice,
+                follow_up_date: p.follow_up_date
             };
             sessionStorage.setItem('current_patient', JSON.stringify(patientData));
 

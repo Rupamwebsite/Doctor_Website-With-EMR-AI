@@ -802,7 +802,7 @@ appPublic.get('/api/doctor/appointments', async (req, res) => {
         let q = `
             SELECT a.id, a.pat_num, a.doctor_id, a.doctor_name, a.patient_name, a.patient_phone, a.patient_email, 
                    a.appointment_date, a.appointment_time, a.payment_amount, a.status,
-                   p.symptoms, p.diagnosis, p.medicines, p.lab_tests, p.advice, p.follow_up_date,
+                   p.symptoms, p.clinical_findings, p.diagnosis, p.medicines, p.lab_tests, p.advice, p.follow_up_date,
                    p.vital_bp, p.vital_pulse, p.vital_spo2, p.vital_temp,
                    CASE WHEN p.id IS NOT NULL THEN 'Completed' ELSE a.status END as status
             FROM appointments a
@@ -833,7 +833,7 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
         const {
             id, doctor_id, doctor_name,
             vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, diagnosis, medicines, lab_tests, advice, follow_up_date
+            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
@@ -853,6 +853,7 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
                     vital_spo2 VARCHAR(50),
                     vital_temp VARCHAR(50),
                     symptoms TEXT,
+                    clinical_findings TEXT,
                     diagnosis TEXT,
                     medicines LONGTEXT,
                     lab_tests TEXT,
@@ -861,6 +862,14 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             `);
+            // Check if column exists by selecting it
+            try {
+                await dbPatient.promise().query("SELECT clinical_findings FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                // Column likely missing, add it
+                console.log("Adding clinical_findings column...");
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN clinical_findings TEXT AFTER symptoms");
+            }
             console.log("Table check passed (Public Port)");
         } catch (tableErr) {
             console.error("Table creation warning:", tableErr);
@@ -871,24 +880,56 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
         const patient_id = aptRows.length ? aptRows[0].pat_id : null;
 
         // 2. Insert into prescriptions table
-        const insertSql = `
-            INSERT INTO prescriptions 
-            (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, diagnosis, medicines, lab_tests, advice, follow_up_date)
-            VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
 
-        const params = [
-            id, doctor_id, doctor_name, patient_id,
-            vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, diagnosis, JSON.stringify(medicines || []), lab_tests, advice, follow_up_date || null
-        ];
 
-        const [r] = await dbPatient.promise().query(insertSql, params);
+        // CHECK IF PRESCRIPTION EXISTS FOR THIS PATIENT (Single Record per Patient)
+        // Logic: Try by patient_id first. If not available (rare), fallback to appointment_id.
+        let existing = [];
+        if (patient_id) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE patient_id = ? LIMIT 1', [patient_id]);
+        }
+        // Fallback: If no patient-linked record found, check if one exists for this appointment
+        if (existing.length === 0) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE appointment_id = ? LIMIT 1', [id]);
+        }
+        const medJSON = JSON.stringify(medicines || []);
 
-        // 3. Update appointment status to Completed
-        await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]);
+        if (existing.length > 0) {
+            // UPDATE EXISTING RECORD (Single Sheet concept)
+            console.log(`Updating existing unique prescription for Patient ${patient_id} (Public)`);
+            const updateSql = `
+                UPDATE prescriptions SET 
+                appointment_id=?, visit_date=NOW(), 
+                vital_bp=?, vital_pulse=?, vital_spo2=?, vital_temp=?, 
+                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, follow_up_date=?
+                WHERE id=?
+            `;
+            const updateParams = [
+                id, // update appointment_id to current one
+                vital_bp, vital_pulse, vital_spo2, vital_temp,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null,
+                existing[0].id
+            ];
+            await dbPatient.promise().query(updateSql, updateParams);
+            return res.json({ success: true, insertId: existing[0].id, message: 'Updated (Single Record)' });
+        } else {
+            // INSERT NEW
+            const insertSql = `
+                INSERT INTO prescriptions 
+                (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date)
+                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            const params = [
+                id, doctor_id, doctor_name, patient_id,
+                vital_bp, vital_pulse, vital_spo2, vital_temp,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null
+            ];
+            const [r] = await dbPatient.promise().query(insertSql, params);
+            // Update status
+            try { await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]); } catch (e) { }
 
-        return res.json({ success: true, insertId: r.insertId });
+            return res.json({ success: true, insertId: r.insertId, message: 'Saved' });
+        }
     } catch (e) {
         console.error('Prescribe error:', e);
         res.status(500).json({ error: e.message });
@@ -1048,7 +1089,7 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
         const {
             id, doctor_id, doctor_name,
             vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, diagnosis, medicines, lab_tests, advice, follow_up_date
+            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
@@ -1068,6 +1109,7 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
                     vital_spo2 VARCHAR(50),
                     vital_temp VARCHAR(50),
                     symptoms TEXT,
+                    clinical_findings TEXT,
                     diagnosis TEXT,
                     medicines LONGTEXT,
                     lab_tests TEXT,
@@ -1076,6 +1118,14 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             `);
+            // Check if column exists by selecting it
+            try {
+                await dbPatient.promise().query("SELECT clinical_findings FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                // Column likely missing, add it
+                console.log("Adding clinical_findings column (Doctor Port)...");
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN clinical_findings TEXT AFTER symptoms");
+            }
         } catch (tableErr) {
             console.error("Table creation warning:", tableErr);
             // continue, maybe it exists or user lacks permission, but worth trying
@@ -1085,29 +1135,65 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
         const [aptRows] = await dbPatient.promise().query('SELECT pat_id FROM appointments WHERE id=?', [id]);
         const patient_id = aptRows.length ? aptRows[0].pat_id : null;
 
-        // 2. Insert into prescriptions table
-        const insertSql = `
-            INSERT INTO prescriptions 
-            (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, diagnosis, medicines, lab_tests, advice, follow_up_date)
-            VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        const params = [
-            id, doctor_id, doctor_name, patient_id,
-            vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, diagnosis, JSON.stringify(medicines || []), lab_tests, advice, follow_up_date || null
-        ];
-
-        const [r] = await dbPatient.promise().query(insertSql, params);
-
-        // 3. Update appointment status to Completed
-        try {
-            await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]);
-        } catch (upErr) {
-            console.error("Failed to update status (non-fatal):", upErr);
+        // CHECK IF PRESCRIPTION EXISTS FOR THIS PATIENT (Single Record per Patient)
+        // Logic: Try by patient_id first. If not available (rare), fallback to appointment_id.
+        let existing = [];
+        if (patient_id) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE patient_id = ? LIMIT 1', [patient_id]);
+        }
+        // Fallback: If no patient-linked record found, check if one exists for this appointment
+        if (existing.length === 0) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE appointment_id = ? LIMIT 1', [id]);
         }
 
-        return res.json({ success: true, insertId: r.insertId });
+        const medJSON = JSON.stringify(medicines || []);
+
+        if (existing.length > 0) {
+            // UPDATE EXISTING RECORD (Single Sheet concept)
+            console.log(`Updating existing unique prescription for Patient ${patient_id}`);
+            const updateSql = `
+                UPDATE prescriptions SET 
+                appointment_id=?, visit_date=NOW(),
+                vital_bp=?, vital_pulse=?, vital_spo2=?, vital_temp=?, 
+                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, follow_up_date=?
+                WHERE id=?
+            `;
+            const updateParams = [
+                id, // update appointment_id to current one
+                vital_bp, vital_pulse, vital_spo2, vital_temp,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null,
+                existing[0].id
+            ];
+            await dbPatient.promise().query(updateSql, updateParams);
+
+            // Return the existing ID
+            return res.json({ success: true, insertId: existing[0].id, message: 'Updated (Single Record)' });
+
+        } else {
+            // INSERT NEW
+            const insertSql = `
+                INSERT INTO prescriptions 
+                (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date)
+                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            const params = [
+                id, doctor_id, doctor_name, patient_id,
+                vital_bp, vital_pulse, vital_spo2, vital_temp,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null
+            ];
+
+            const [r] = await dbPatient.promise().query(insertSql, params);
+
+            // 3. Update appointment status to Completed (Only needed on first insert usually, but safe to repeat)
+            try {
+                await dbPatient.promise().query("UPDATE appointments SET status='Completed' WHERE id=?", [id]);
+            } catch (upErr) {
+                console.error("Failed to update status (non-fatal):", upErr);
+            }
+
+            return res.json({ success: true, insertId: r.insertId, message: 'Saved' });
+        }
     } catch (e) {
         console.error('Prescribe error:', e);
         res.status(500).json({ error: e.message });
