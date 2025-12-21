@@ -449,11 +449,23 @@
       <span>RM HealthCare</span>
     </div>
     <div class="nav-links">
-      <a class="nav-item" href="/doctors-master.html"><i class="fas fa-user-md"></i> Doctor Master</a>
-      <a class="nav-item active" href="/patient-registry.html"><i class="fas fa-procedures"></i> Patient Registry</a>
-      <a class="nav-item" href="#"><i class="fas fa-calendar-check"></i> Appointments</a>
-      <a class="nav-item" href="/billing.html"><i class="fas fa-file-invoice-dollar"></i> Billing & Invoice</a>
-      <a class="nav-item" href="./User_create.html"><i class="fas fa-user-plus"></i> Create Users</a>
+      <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i> Doctor
+        Master</a>
+      <a class="nav-item active" href="/patient-registry.html" data-perm="patient_registry"><i
+          class="fas fa-procedures"></i> Patient Registry</a>
+      <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i class="fas fa-calendar-check"></i>
+        Appointments</a>
+      <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+          class="fas fa-file-prescription"></i> Patient
+        Prescriptions</a>
+      <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i> Billing &
+        Invoice</a>
+      <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i class="fas fa-user-plus"></i>
+        User Management</a>
+      <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i> Role
+        Master</a>
+      <a class="nav-item" href="/admin/mis/mis.html" data-perm="mis_reports"><i class="fas fa-chart-line"></i> MIS
+        Reports</a>
     </div>
   </aside>
 
@@ -486,7 +498,8 @@
           <table id="apptTable">
             <thead>
               <tr>
-                <th>#</th>
+                <th>Patient Number</th>
+                <th>Bill Number</th>
                 <th>Patient</th>
                 <th>Phone / Email</th>
                 <th>Doctor</th>
@@ -555,8 +568,29 @@
 
   <script>
     const TOKEN_KEY = 'admin_token';
+    const USER_KEY = 'admin_user';
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) location.href = '/login.html';
+
+    // Permission Check
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        const userStr = localStorage.getItem(USER_KEY);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user.role === 'Super Admin') return; // Bypass
+
+          const permissions = user.permissions || [];
+          // Hide unauthorized sidebar items
+          document.querySelectorAll('.nav-item[data-perm]').forEach(el => {
+            const reqPerm = el.getAttribute('data-perm');
+            if (!permissions.includes(reqPerm)) {
+              el.style.display = 'none';
+            }
+          });
+        }
+      } catch (e) { console.error('Error applying permissions', e); }
+    });
 
     async function api(url, method = 'GET', body = null) {
       const headers = { 'x-admin-key': token };
@@ -588,10 +622,21 @@
       const rows = filteredAppointments;
       document.getElementById('count').innerText = `${rows.length} bookings`;
       const tb = document.getElementById('tbody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="muted">No bookings found</td></tr>'; return; }
-      tb.innerHTML = rows.map((r, idx) => `
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="muted">No bookings found</td></tr>'; return; }
+      tb.innerHTML = rows.map((r, idx) => {
+        // Use created_at year or appointment_date year, fallback to current year
+        const dateObj = r.created_at ? new Date(r.created_at) : (r.appointment_date ? new Date(r.appointment_date) : new Date());
+        let year = dateObj.getFullYear();
+        if (isNaN(year)) year = new Date().getFullYear();
+
+        const patId = r.pat_num || `OB/${year}/${String(r.id).padStart(6, '0')}`;
+        // Use DB value for bill_id
+        const billId = r.bill_id || '—';
+
+        return `
       <tr>
-        <td><strong>#${r.id}</strong></td>
+        <td><strong>${patId}</strong></td>
+        <td><span style="font-family:monospace; font-weight:600; color:var(--primary)">${billId}</span></td>
         <td><div style="font-weight:700">${escapeHtml(r.patient_name || '—')}</div><div class="muted" style="font-size:12px">${escapeHtml(r.patient_address || '')}</div></td>
         <td>${escapeHtml(r.patient_phone || '')}<div class="muted" style="font-size:12px">${escapeHtml(r.patient_email || '')}</div></td>
         <td>${escapeHtml(r.doctor_name || '—')}</td>
@@ -604,7 +649,8 @@
           <button class="btn btn-danger btn-sm" onclick="del(${r.id})"><i class="fas fa-trash"></i></button>
         </td>
       </tr>
-    `).join('');
+    `;
+      }).join('');
     }
 
     function formatDate(iso) {
@@ -625,7 +671,7 @@
       const ap = appointments.find(a => a.id === id);
       if (!ap) return alert('Not found');
       editingId = id;
-      
+
       // Fetch doctor schedule for validation
       if (ap.doctor_id) {
         try {
@@ -653,15 +699,15 @@
       f.appointment_time.value = ap.appointment_time || '';
       document.getElementById('editModal').classList.add('open');
     }
-    
+
     // Validate date on change
-    document.querySelector('#editForm input[name="appointment_date"]').addEventListener('change', function(e) {
+    document.querySelector('#editForm input[name="appointment_date"]').addEventListener('change', function (e) {
       if (!this.value || !currentDoctorOPDDays.length) return;
-      
+
       const date = new Date(this.value);
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const dayName = days[date.getDay()];
-      
+
       if (!currentDoctorOPDDays.includes(dayName)) {
         alert(`Doctor is not available on ${dayName}. Available days: ${currentDoctorOPDDays.join(', ')}`);
         this.value = ''; // Clear invalid date

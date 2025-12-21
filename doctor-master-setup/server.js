@@ -9,6 +9,7 @@ const multer = require('multer');
 
 const adminRoutes = require('./src/routes/adminRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const masterController = require('./src/controllers/masterController');
 
 // ============================================================
 // 1. DATABASE CONNECTIONS
@@ -104,37 +105,55 @@ appAdmin.use(express.static(adminPanelPath));
 appAdmin.use(express.static(adminInnerPath));
 appAdmin.use('/uploads', express.static(ABS_UPLOAD));
 
-appAdmin.get('/', (req, res) => res.redirect('/login.html'));
+// NEW: Serve Doctor Dashboard files (including login)
+appAdmin.use('/doctor_dashboard', express.static(path.join(__dirname, 'public/Doctor_Dashboard')));
+
+const unifiedLoginPath = path.join(__dirname, 'public/admin/login.html');
+
+appAdmin.get('/', (req, res) => {
+    if (fs.existsSync(unifiedLoginPath)) res.sendFile(unifiedLoginPath);
+    else res.send('Login File Not Found: ' + unifiedLoginPath);
+});
+
 appAdmin.get('/login.html', (req, res) => {
-    if (fs.existsSync(path.join(adminInnerPath, 'login.html')))
-        res.sendFile(path.join(adminInnerPath, 'login.html'));
+    if (fs.existsSync(unifiedLoginPath)) res.sendFile(unifiedLoginPath);
     else res.send('Login File Not Found');
 });
+
 appAdmin.get('/doctors-master.html', (req, res) => {
+    // Admin Panel Entry Point
     if (fs.existsSync(path.join(adminInnerPath, 'doctors-master.html')))
         res.sendFile(path.join(adminInnerPath, 'doctors-master.html'));
     else res.send('Dashboard File Not Found');
 });
 
-// Serve Doctor Login Page
+// Serve Doctor Login Page (Legacy route support)
 appAdmin.get('/doctor_login', (req, res) => {
-    const loginPath = path.join(__dirname, '../Doctor_Dashboard/d_login_page/doctor_login.html');
-    if (fs.existsSync(loginPath)) {
-        res.sendFile(loginPath);
+    if (fs.existsSync(unifiedLoginPath)) {
+        res.sendFile(unifiedLoginPath);
     } else {
         res.send('Doctor Login File Not Found');
     }
 });
 
-// Serve Doctor Dashboard Page (Port 4000)
-appAdmin.get('/doctor_dashboard', (req, res) => {
-    const dashboardPath = path.join(__dirname, '../Doctor_Dashboard/d_login_page/doctor_dashboard.html');
-    if (fs.existsSync(dashboardPath)) {
-        res.sendFile(dashboardPath);
-    } else {
-        res.send('Doctor Dashboard File Not Found');
-    }
+// Serve Doctor Dashboard HTML files via clean URLs if needed, or rely on static middleware
+appAdmin.get('/doctor_dashboard_view', (req, res) => {
+    const dPath = path.join(__dirname, 'public/Doctor_Dashboard/doctor_dashboard.html');
+    if (fs.existsSync(dPath)) res.sendFile(dPath);
+    else res.send('Dashboard Not Found');
 });
+
+// Ensure doctors table has created_at
+; (async function ensureDoctorsTableColumns() {
+    try {
+        await dbDoctor.promise().query("SELECT created_at FROM doctors LIMIT 1");
+    } catch (colErr) {
+        try {
+            await dbDoctor.promise().query("ALTER TABLE doctors ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+            console.log("Added created_at column to doctors table");
+        } catch (e) { console.error("Error adding created_at to doctors:", e.message); }
+    }
+})();
 
 // --- ADMIN API ---
 
@@ -145,11 +164,27 @@ appAdmin.get('/api/doctors', async (req, res) => {
             SELECT DoctorID as id, FirstName as first_name, LastName as last_name, 
             Department as department, DoctorType as doctor_type, Specialization as specialization, 
             Fees as fees, ContactNumber as phone, Email as email, image_url, 
-            ActiveStatus as is_active, opd_days, opd_time, daily_limit 
+            ActiveStatus as is_active, opd_days, opd_time, daily_limit,
+            Degrees as degrees, RegNumber as reg_number, created_at, 
+            created_by, updated_by, updated_at
             FROM doctors ORDER BY DoctorID DESC`);
         res.json({ doctors: rows });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// Ensure doctors table has audit columns
+; (async function ensureDoctorsAuditColumns() {
+    try {
+        const cols = [
+            "ADD COLUMN created_by VARCHAR(100) NULL",
+            "ADD COLUMN updated_by VARCHAR(100) NULL",
+            "ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP"
+        ];
+        for (const c of cols) {
+            try { await dbDoctor.promise().query(`ALTER TABLE doctors ${c}`); } catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error(e.message); }
+        }
+    } catch (e) { console.error("Error adding audit columns:", e.message); }
+})();
 
 // 2. Get Single Doctor
 appAdmin.get('/api/doctors/:id', async (req, res) => {
@@ -162,7 +197,8 @@ appAdmin.get('/api/doctors/:id', async (req, res) => {
             department: d.Department, doctor_type: d.DoctorType, specialization: d.Specialization,
             fees: d.Fees, phone: d.ContactNumber, email: d.Email, dob: d.DOB,
             image_url: d.image_url, is_active: d.ActiveStatus,
-            opd_days: d.opd_days, opd_time: d.opd_time, daily_limit: d.daily_limit
+            opd_days: d.opd_days, opd_time: d.opd_time, daily_limit: d.daily_limit,
+            degrees: d.Degrees, reg_number: d.RegNumber
         });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -182,11 +218,11 @@ appAdmin.patch('/api/admin/doctors/:id/schedule', async (req, res) => {
 // 4. CRUD
 appAdmin.post('/api/admin/doctors', upload.single('image'), async (req, res) => {
     try {
-        const { first_name, last_name, department, specialization, fees, phone, email, doctor_type, dob, is_active, username, password } = req.body;
+        const { first_name, last_name, department, specialization, fees, phone, email, doctor_type, dob, is_active, username, password, degrees, reg_number } = req.body;
         const img = req.file ? req.file.filename : null;
         const [r] = await dbDoctor.promise().query(
-            `INSERT INTO doctors (FirstName, LastName, Department, DoctorType, Specialization, Fees, ContactNumber, Email, DOB, image_url, ActiveStatus) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-            [first_name, last_name, department, doctor_type, specialization, fees, phone, email, dob, img, is_active]
+            `INSERT INTO doctors (FirstName, LastName, Department, DoctorType, Specialization, Fees, ContactNumber, Email, DOB, image_url, ActiveStatus, Degrees, RegNumber) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [first_name, last_name, department, doctor_type, specialization, fees, phone, email, dob, img, is_active, degrees, reg_number]
         );
         const insertedId = r && r.insertId ? r.insertId : null;
 
@@ -202,6 +238,40 @@ appAdmin.post('/api/admin/doctors', upload.single('image'), async (req, res) => 
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Ensure 'roles' table exists
+; (async function ensureRolesTable() {
+    try {
+        await dbDoctor.promise().query(`
+            CREATE TABLE IF NOT EXISTS roles (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                role_name VARCHAR(100) UNIQUE NOT NULL,
+                permissions JSON DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        // Add permissions column if it doesn't exist (for existing tables)
+        try {
+            await dbDoctor.promise().query(`ALTER TABLE roles ADD COLUMN permissions JSON DEFAULT NULL`);
+        } catch (e) {
+            // Ignore error if column already exists (Error 1060: Duplicate column name)
+            if (e.errno !== 1060) console.error('Error adding permissions column:', e.message);
+        }
+
+        // Insert default roles if table is empty
+        const [rows] = await dbDoctor.promise().query('SELECT count(*) as count FROM roles');
+        if (rows[0].count === 0) {
+            await dbDoctor.promise().query('INSERT INTO roles (role_name) VALUES (?), (?), (?), (?), (?)',
+                ['Receptionist', 'Staff', 'Nurse', 'Admin', 'Billing']);
+        }
+    } catch (e) { console.error('Could not ensure roles table:', e.message); }
+})();
+
+// --- Roles API ---
+appAdmin.get('/api/admin/roles', masterController.getRoles);
+appAdmin.post('/api/admin/roles', masterController.addRole);
+appAdmin.put('/api/admin/roles/:id', masterController.updateRole);
+appAdmin.delete('/api/admin/roles/:id', masterController.deleteRole);
+
 // Admin: Create or update doctor credentials separately
 appAdmin.post('/api/admin/doctors/:id/credentials', async (req, res) => {
     try {
@@ -209,17 +279,15 @@ appAdmin.post('/api/admin/doctors/:id/credentials', async (req, res) => {
         // simple admin auth
         if (req.headers['x-admin-key'] !== 'my-secret-key') return res.status(401).json({ error: 'Invalid' });
         const id = req.params.id;
-        const { username, password, fullname, mobile, category, status } = req.body;
+        const { username, password, fullname, mobile, role, status } = req.body;
         if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-
-        const hash = await bcrypt.hash(password, 10);
 
         // 1. Update/Insert into doctor_users (for login)
         const [exists] = await dbDoctor.promise().query('SELECT id FROM doctor_users WHERE doctor_id=?', [id]);
         if (exists && exists.length) {
-            await dbDoctor.promise().query('UPDATE doctor_users SET username=?, password_hash=? WHERE doctor_id=?', [username, hash, id]);
+            await dbDoctor.promise().query('UPDATE doctor_users SET username=?, password_hash=? WHERE doctor_id=?', [username, password, id]);
         } else {
-            await dbDoctor.promise().query('INSERT INTO doctor_users (doctor_id, username, password_hash) VALUES (?,?,?)', [id, username, hash]);
+            await dbDoctor.promise().query('INSERT INTO doctor_users (doctor_id, username, password_hash) VALUES (?,?,?)', [id, username, password]);
         }
 
         // 2. Also insert into 'users' table (for directory visibility)
@@ -227,8 +295,8 @@ appAdmin.post('/api/admin/doctors/:id/credentials', async (req, res) => {
         const [uExists] = await dbDoctor.promise().query('SELECT id FROM users WHERE username=?', [username]);
         if (!uExists || !uExists.length) {
             await dbDoctor.promise().query(
-                'INSERT INTO users (username, password, full_name, mobile, category, status, doctor_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [username, hash, fullname || '', mobile || '', category || 'Doctor', status || 1, id]
+                'INSERT INTO users (username, password, full_name, mobile, role, status, doctor_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [username, password, fullname || '', mobile || '', role || 'Doctor', status || 1, id]
             );
         } else {
             // Optional: Update existing user if needed, but for now just skip to avoid errors
@@ -261,11 +329,13 @@ appAdmin.post('/api/admin/users', async (req, res) => {
                     password VARCHAR(255),
                     full_name VARCHAR(150),
                     mobile VARCHAR(50),
-                    category VARCHAR(50),
+                    role VARCHAR(50),
                     status INT DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
              `);
+            // Migration: Rename category to role if it exists
+            try { await dbDoctor.promise().query("ALTER TABLE users CHANGE COLUMN category role VARCHAR(50)"); } catch (e) { }
         } catch (e) { }
 
         // Check if username exists in 'users'
@@ -274,11 +344,9 @@ appAdmin.post('/api/admin/users', async (req, res) => {
 
         // Insert into 'users' table
         // Note: User screenshot shows 'full_name' and 'password' columns
-        // Insert into 'users' table
-        // Note: User screenshot shows 'full_name' and 'password' columns
         const [result] = await dbDoctor.promise().query(
-            'INSERT INTO users (username, password, full_name, mobile, category, status) VALUES (?, ?, ?, ?, ?, ?)',
-            [username, hash, fullname, mobile, category, status]
+            'INSERT INTO users (username, password, full_name, mobile, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [username, password, fullname, mobile, category, status]
         );
 
         res.json({ message: 'User created', id: result.insertId });
@@ -305,17 +373,17 @@ appAdmin.put('/api/admin/users/:id', async (req, res) => {
     try {
         if (req.headers['x-admin-key'] !== 'my-secret-key') return res.status(401).json({ error: 'Invalid' });
         const id = req.params.id;
-        const { username, password, fullname, mobile, category, status } = req.body;
+        const { username, password, fullname, mobile, role, status } = req.body;
 
         // Build update query dynamically
         let fields = [];
         let values = [];
 
         if (username) { fields.push('username=?'); values.push(username); }
-        if (password) { fields.push('password=?'); values.push(await bcrypt.hash(password, 10)); }
+        if (password) { fields.push('password=?'); values.push(password); }
         if (fullname) { fields.push('full_name=?'); values.push(fullname); }
         if (mobile) { fields.push('mobile=?'); values.push(mobile); }
-        if (category) { fields.push('category=?'); values.push(category); }
+        if (role) { fields.push('role=?'); values.push(role); }
         if (status !== undefined) { fields.push('status=?'); values.push(status); }
 
         if (fields.length === 0) return res.json({ message: 'Nothing to update' });
@@ -335,7 +403,21 @@ appAdmin.delete('/api/admin/users/:id', async (req, res) => {
     try {
         if (req.headers['x-admin-key'] !== 'my-secret-key') return res.status(401).json({ error: 'Invalid' });
         const id = req.params.id;
+
+        // 1. Get username before deleting
+        const [uRows] = await dbDoctor.promise().query('SELECT username FROM users WHERE id=?', [id]);
+
+        // 2. Delete from users
         await dbDoctor.promise().query('DELETE FROM users WHERE id=?', [id]);
+
+        // 3. Delete from doctor_users (legacy fallback) if username found
+        if (uRows.length > 0) {
+            const username = uRows[0].username;
+            if (username) {
+                await dbDoctor.promise().query('DELETE FROM doctor_users WHERE username=?', [username]);
+            }
+        }
+
         res.json({ message: 'User deleted' });
     } catch (e) {
         console.error('Error deleting user:', e);
@@ -343,6 +425,9 @@ appAdmin.delete('/api/admin/users/:id', async (req, res) => {
     }
 });
 
+// Doctor authentication endpoint (username + password)
+// Matches /api/auth/doctor for backward compatibility
+// Shared Doctor Login Logic
 // Doctor authentication endpoint (username + password)
 // Matches /api/auth/doctor for backward compatibility
 // Shared Doctor Login Logic
@@ -354,19 +439,65 @@ const handleDoctorLogin = async (req, res) => {
 
         if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
 
+        // Helper to check password (supports legacy bcrypt and new plaintext)
+        const checkPassword = async (inputPw, storedPw) => {
+            if (!storedPw) return false;
+            // Legacy: if it starts with $2b$, it's likely bcrypt
+            if (storedPw.startsWith('$2b$')) {
+                return await bcrypt.compare(inputPw, storedPw);
+            }
+            // New: Plain text
+            return inputPw === storedPw;
+        };
+
         // 1. Check 'users' table (preferred for new flow)
         const [uRows] = await dbDoctor.promise().query('SELECT * FROM users WHERE username=?', [username]);
 
         if (uRows && uRows.length > 0) {
             const u = uRows[0];
-            const ok = await bcrypt.compare(password, u.password || '');
+            const ok = await checkPassword(password, u.password);
             if (ok) {
                 if (u.status === 0) return res.status(401).json({ error: 'Account is inactive' });
 
+                // Fetch linked doctor details if available
+                let docDetails = {};
+                if (u.doctor_id) {
+                    const [dRows] = await dbDoctor.promise().query('SELECT * FROM Doctors WHERE DoctorID=?', [u.doctor_id]);
+                    if (dRows.length) docDetails = dRows[0];
+                }
+
+                // Fetch Role Permissions
+                let permissions = [];
+                try {
+                    const [rRows] = await dbDoctor.promise().query('SELECT permissions FROM roles WHERE role_name=?', [u.role]);
+                    if (rRows.length > 0 && rRows[0].permissions) {
+                        // Handle if stored as string or JSON object
+                        if (typeof rRows[0].permissions === 'string') {
+                            permissions = JSON.parse(rRows[0].permissions);
+                        } else {
+                            permissions = rRows[0].permissions;
+                        }
+                    }
+                } catch (err) { console.error('Error fetching permissions:', err); }
+
                 return res.json({
                     success: true,
-                    doctor: { id: u.doctor_id || u.id, name: u.full_name, username: u.username, category: u.category },
-                    token: 'server_token_' + u.id
+                    doctor: {
+                        id: u.doctor_id || u.id,
+                        name: u.full_name,
+                        username: u.username,
+                        role: u.role,
+                        permissions: permissions, // Add permissions to response
+                        // Merge doctor details
+                        degrees: docDetails.Degrees || '',
+                        reg_number: docDetails.RegNumber || '',
+                        specialization: docDetails.Specialization || '',
+                        department: docDetails.Department || '',
+                        email: docDetails.Email || '',
+                        phone: docDetails.ContactNumber || ''
+                    },
+                    // FIX: Return the secret key from env
+                    token: process.env.ADMIN_KEY || 'my-secret-key'
                 });
             }
         }
@@ -375,14 +506,21 @@ const handleDoctorLogin = async (req, res) => {
         const [rows] = await dbDoctor.promise().query('SELECT * FROM doctor_users WHERE username=?', [username]);
         if (rows && rows.length > 0) {
             const u = rows[0];
-            const ok = await bcrypt.compare(password, u.password_hash || '');
+            const ok = await checkPassword(password, u.password_hash);
             if (ok) {
-                const [drows] = await dbDoctor.promise().query('SELECT DoctorID as id, FirstName as first_name, LastName as last_name FROM doctors WHERE DoctorID=?', [u.doctor_id]);
-                const doc = drows && drows.length ? drows[0] : { id: u.doctor_id };
+                const [drows] = await dbDoctor.promise().query('SELECT * FROM Doctors WHERE DoctorID=?', [u.doctor_id]);
+                const doc = drows && drows.length ? drows[0] : { DoctorID: u.doctor_id };
                 return res.json({
                     success: true,
-                    doctor: { id: doc.id, name: (doc.first_name || '') + ' ' + (doc.last_name || '') },
-                    token: 'server_token_' + doc.id
+                    doctor: {
+                        id: doc.DoctorID,
+                        name: (doc.FirstName || '') + ' ' + (doc.LastName || ''),
+                        degrees: doc.Degrees || '',
+                        reg_number: doc.RegNumber || '',
+                        specialization: doc.Specialization || '',
+                        department: doc.Department || ''
+                    },
+                    token: process.env.ADMIN_KEY || 'my-secret-key'
                 });
             }
         }
@@ -390,6 +528,17 @@ const handleDoctorLogin = async (req, res) => {
         return res.status(401).json({ error: 'Invalid User ID or Password' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
+// Ensure Doctors table has new columns (Migration)
+(async function migrateDoctorsTable() {
+    try {
+        try { await dbDoctor.promise().query("ALTER TABLE Doctors ADD COLUMN Degrees VARCHAR(255)"); } catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error(e.message); }
+        try { await dbDoctor.promise().query("ALTER TABLE Doctors ADD COLUMN RegNumber VARCHAR(100)"); } catch (e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error(e.message); }
+        console.log("✅ Doctors table schema updated (Degrees, RegNumber)");
+    } catch (e) {
+        console.error("Schema migration fatal:", e.message);
+    }
+})();
 
 // Apply shared login to Admin App (for backward compatibility)
 appAdmin.post('/api/auth/doctor', handleDoctorLogin);
@@ -451,9 +600,9 @@ appAdmin.put('/api/admin/doctors/:id', upload.single('image'), async (req, res) 
         console.log('Body:', req.body);
         console.log('File:', req.file);
 
-        const { first_name, last_name, department, specialization, fees, phone, email, doctor_type, dob, is_active } = req.body;
-        let q = `UPDATE doctors SET FirstName=?, LastName=?, Department=?, DoctorType=?, Specialization=?, Fees=?, ContactNumber=?, Email=?, DOB=?, ActiveStatus=?`;
-        let p = [first_name, last_name, department, doctor_type, specialization, fees, phone, email, dob, is_active];
+        const { first_name, last_name, department, specialization, fees, phone, email, doctor_type, dob, is_active, degrees, reg_number } = req.body;
+        let q = `UPDATE doctors SET FirstName=?, LastName=?, Department=?, DoctorType=?, Specialization=?, Fees=?, ContactNumber=?, Email=?, DOB=?, ActiveStatus=?, Degrees=?, RegNumber=?`;
+        let p = [first_name, last_name, department, doctor_type, specialization, fees, phone, email, dob, is_active, degrees, reg_number];
         if (req.file) { q += `, image_url=?`; p.push(req.file.filename); }
         q += ` WHERE DoctorID=?`; p.push(req.params.id);
 
@@ -492,7 +641,7 @@ appAdmin.get('/api/admin/appointments', async (req, res) => {
     try {
         // Simple admin auth: require x-admin-key header
         if (req.headers['x-admin-key'] !== 'my-secret-key') return res.status(401).json({ error: 'Invalid' });
-        const [rows] = await dbPatient.promise().query('SELECT id, pat_num, doctor_id, doctor_name, patient_name, patient_phone, patient_email, appointment_date, appointment_time, payment_method, payment_id, payment_order_id, payment_amount, status, created_at, patient_sex, patient_address, patient_age, patient_dob, bill_html FROM appointments ORDER BY id DESC');
+        const [rows] = await dbPatient.promise().query('SELECT id, pat_num, bill_id, doctor_id, doctor_name, patient_name, patient_phone, patient_email, appointment_date, appointment_time, payment_method, payment_id, payment_order_id, payment_amount, status, created_at, patient_sex, patient_address, patient_age, patient_dob, bill_html FROM appointments ORDER BY id DESC');
         res.json({ appointments: rows });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -554,11 +703,11 @@ appPublic.post('/login', async (req, res) => {
 
 appPublic.post('/register', async (req, res) => {
     try {
-        const { full_name, email, password, date_of_birth } = req.body;
+        const { full_name, email, password } = req.body;
         const hashed = await bcrypt.hash(password, 10);
-        await dbPatient.promise().query('INSERT INTO users (full_name, email, password, date_of_birth) VALUES (?, ?, ?, ?)', [full_name, email, hashed, date_of_birth]);
-        res.status(201).json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+        await dbPatient.promise().query('INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)', [full_name, email, hashed]);
+        res.status(201).json({ success: true, message: 'Registered successfully!' });
+    } catch (e) { res.status(500).json({ success: false, message: e.message, error: e.message }); }
 });
 
 // Razorpay: create an order (frontend calls this to get order_id)
@@ -602,7 +751,7 @@ appPublic.get('/api/doctors/:id', async (req, res) => {
             SELECT DoctorID as id, FirstName as first_name, LastName as last_name, 
             Department as department, DoctorType as doctor_type, Specialization as specialization, 
             Fees as fees, ContactNumber as phone, Email as email, image_url, 
-            opd_days, opd_time, daily_limit 
+            opd_days, opd_time, daily_limit, Degrees as degrees, RegNumber as reg_number 
             FROM doctors WHERE DoctorID = ?`, [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
         res.json(rows[0]);
@@ -790,6 +939,46 @@ appPublic.get('/api/appointments', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Admin: Get All Prescriptions (Merged with Doctor Info)
+appPublic.get('/api/admin/prescriptions', async (req, res) => {
+    try {
+        // 1. Fetch all doctors
+        const [docs] = await dbDoctor.promise().query("SELECT DoctorID, FirstName, LastName, Degrees, RegNumber, Specialization, Department FROM Doctors");
+        const docMap = {};
+        docs.forEach(d => {
+            docMap[d.DoctorID] = {
+                degrees: d.Degrees,
+                reg_number: d.RegNumber,
+                specialization: d.Specialization,
+                department: d.Department
+            };
+        });
+
+        // 2. Fetch all prescriptions
+        const [rows] = await dbPatient.promise().query(`
+            SELECT a.id, a.doctor_id, a.doctor_name, a.patient_name, a.appointment_date,
+                   p.medicines, p.diagnosis, p.symptoms, p.clinical_findings 
+            FROM appointments a
+            JOIN prescriptions p ON a.id = p.appointment_id
+            ORDER BY a.appointment_date DESC, a.id DESC
+        `);
+
+        // 3. Merge
+        const results = rows.map(r => {
+            const extra = docMap[r.doctor_id] || {};
+            return {
+                ...r,
+                doctor_degrees: extra.degrees,
+                doctor_reg: extra.reg_number,
+                doctor_spec: extra.specialization,
+                doctor_dept: extra.department
+            };
+        });
+
+        res.json({ prescriptions: results });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // -----------------------------
 // Doctor APIs (public)
 // -----------------------------
@@ -833,7 +1022,7 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
         const {
             id, doctor_id, doctor_name,
             vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date
+            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, note, follow_up_date
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
@@ -846,7 +1035,10 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
                     appointment_id INT,
                     doctor_id INT,
                     doctor_name VARCHAR(255),
-                    patient_id INT,
+                    doctor_id INT,
+                    doctor_name VARCHAR(255),
+                    patient_name VARCHAR(255),
+                    pat_num VARCHAR(64),
                     visit_date DATETIME,
                     vital_bp VARCHAR(50),
                     vital_pulse VARCHAR(50),
@@ -858,35 +1050,62 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
                     medicines LONGTEXT,
                     lab_tests TEXT,
                     advice TEXT,
+                    note TEXT,
                     follow_up_date DATE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             `);
-            // Check if column exists by selecting it
+            // Check if columns exist
             try {
                 await dbPatient.promise().query("SELECT clinical_findings FROM prescriptions LIMIT 1");
             } catch (colErr) {
-                // Column likely missing, add it
                 console.log("Adding clinical_findings column...");
                 await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN clinical_findings TEXT AFTER symptoms");
             }
+            try {
+                await dbPatient.promise().query("SELECT note FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN note TEXT");
+            }
+            try {
+                await dbPatient.promise().query("SELECT updated_at FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP");
+            }
+            try {
+                await dbPatient.promise().query("SELECT patient_name FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN patient_name VARCHAR(255) AFTER patient_id");
+            }
+            try {
+                await dbPatient.promise().query("SELECT pat_num FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN pat_num VARCHAR(64) AFTER patient_name");
+            }
+
             console.log("Table check passed (Public Port)");
         } catch (tableErr) {
             console.error("Table creation warning:", tableErr);
         }
 
-        // 1. Get patient_id from appointment to link it
-        const [aptRows] = await dbPatient.promise().query('SELECT pat_id FROM appointments WHERE id=?', [id]);
-        const patient_id = aptRows.length ? aptRows[0].pat_id : null;
+        // 1. Get patient_name and pat_num from appointment
+        // 1. Get patient_id and patient_name from appointment
+        const [aptRows] = await dbPatient.promise().query('SELECT patient_name, patient_phone, patient_email, pat_num FROM appointments WHERE id=?', [id]);
+        let patient_name = aptRows.length ? aptRows[0].patient_name : null;
+        const patient_phone = aptRows.length ? aptRows[0].patient_phone : null;
+        const patient_email = aptRows.length ? aptRows[0].patient_email : null;
+        const pat_num = aptRows.length ? aptRows[0].pat_num : null;
+
 
         // 2. Insert into prescriptions table
 
 
         // CHECK IF PRESCRIPTION EXISTS FOR THIS PATIENT (Single Record per Patient)
-        // Logic: Try by patient_id first. If not available (rare), fallback to appointment_id.
+        // Logic: Try by pat_num first. Then appointment_id.
         let existing = [];
-        if (patient_id) {
-            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE patient_id = ? LIMIT 1', [patient_id]);
+        if (pat_num) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE pat_num = ? LIMIT 1', [pat_num]);
         }
         // Fallback: If no patient-linked record found, check if one exists for this appointment
         if (existing.length === 0) {
@@ -896,33 +1115,59 @@ appPublic.post('/api/doctor/prescribe', async (req, res) => {
 
         if (existing.length > 0) {
             // UPDATE EXISTING RECORD (Single Sheet concept)
-            console.log(`Updating existing unique prescription for Patient ${patient_id} (Public)`);
+            console.log(`Updating existing unique prescription for Patient ${pat_num || id} (Public)`);
             const updateSql = `
                 UPDATE prescriptions SET 
                 appointment_id=?, visit_date=NOW(), 
                 vital_bp=?, vital_pulse=?, vital_spo2=?, vital_temp=?, 
-                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, follow_up_date=?
+                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, note=?, follow_up_date=?, patient_name=?, pat_num=?
                 WHERE id=?
             `;
             const updateParams = [
                 id, // update appointment_id to current one
                 vital_bp, vital_pulse, vital_spo2, vital_temp,
-                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, note || '', follow_up_date || null, patient_name || '', pat_num || '',
                 existing[0].id
             ];
             await dbPatient.promise().query(updateSql, updateParams);
+
+            // Update Status Logic: Completed -> Modified -> Modified(1) -> ...
+            try {
+                const [sRows] = await dbPatient.promise().query("SELECT status FROM appointments WHERE id=?", [id]);
+                if (sRows.length > 0) {
+                    let currentStatus = sRows[0].status;
+                    let newStatus = 'Modified';
+
+                    if (currentStatus === 'Modified') {
+                        newStatus = 'Modified(1)';
+                    } else if (currentStatus && currentStatus.startsWith('Modified(')) {
+                        const match = currentStatus.match(/Modified\((\d+)\)/);
+                        if (match) {
+                            newStatus = `Modified(${parseInt(match[1]) + 1})`;
+                        }
+                    } else if (currentStatus !== 'Completed') {
+                        // If it's not Completed (e.g. somehow still Pending), leave/set as Modified? 
+                        // Requirement says 1st time Completed. Updates are Modified.
+                        newStatus = 'Modified';
+                    }
+
+                    // Allow overwriting 'Completed' with 'Modified'
+                    await dbPatient.promise().query("UPDATE appointments SET status=? WHERE id=?", [newStatus, id]);
+                }
+            } catch (errStatus) { console.error("Error updating status:", errStatus); }
+
             return res.json({ success: true, insertId: existing[0].id, message: 'Updated (Single Record)' });
         } else {
             // INSERT NEW
             const insertSql = `
                 INSERT INTO prescriptions 
-                (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date)
-                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (appointment_id, doctor_id, doctor_name, patient_name, pat_num, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, note, follow_up_date)
+                VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
             const params = [
-                id, doctor_id, doctor_name, patient_id,
+                id, doctor_id, doctor_name, patient_name || '', pat_num || '',
                 vital_bp, vital_pulse, vital_spo2, vital_temp,
-                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, note || '', follow_up_date || null
             ];
             const [r] = await dbPatient.promise().query(insertSql, params);
             // Update status
@@ -975,46 +1220,19 @@ appPublic.get('/api/doctor/patient-history', async (req, res) => {
 
 
 // ============================================================
-// 🏥 APP 3: DOCTOR SERVER (Port 3001)
+// 🏥 DOCTOR ROUTES (Migrated to Admin Server Port 4000)
 // ============================================================
-const appDoctor = express();
-appDoctor.use(cors());
-appDoctor.use(express.json());
-appDoctor.use(express.urlencoded({ extended: true }));
-
-// Serve Doctor Dashboard Static Files
-// Serve Doctor Dashboard Static Files (Fixed Path)
-const doctorDashboardPath = path.join(__dirname, '../Doctor_Dashboard/d_login_page');
-appDoctor.use(express.static(doctorDashboardPath));
-
-// Routes for Doctor App
-appDoctor.get('/', (req, res) => {
-    const loginPath = path.join(doctorDashboardPath, 'doctor_login.html');
-    if (fs.existsSync(loginPath)) res.sendFile(loginPath);
-    else res.send('Doctor Login File Not Found');
-});
-
-appDoctor.get('/doctor_login', (req, res) => {
-    const loginPath = path.join(doctorDashboardPath, 'doctor_login.html');
-    if (fs.existsSync(loginPath)) res.sendFile(loginPath);
-    else res.send('Doctor Login File Not Found');
-});
-
-// Serve Doctor Dashboard Page
-appDoctor.get('/doctor_dashboard', (req, res) => {
-    const dashboardPath = path.join(doctorDashboardPath, 'doctor_dashboard.html');
-    if (fs.existsSync(dashboardPath)) res.sendFile(dashboardPath);
-    else res.send('Doctor Dashboard File Not Found');
-});
+// Note: Static files are already served by appAdmin in 'public/Doctor_Dashboard'
+// API Routes for Doctor App (Attached to appAdmin)
 
 // API Routes for Doctor App
-appDoctor.post('/api/doctors/login', handleDoctorLogin);
-appDoctor.post('/api/auth/doctor', handleDoctorLogin);
+appAdmin.post('/api/doctors/login', handleDoctorLogin);
+appAdmin.post('/api/auth/doctor', handleDoctorLogin);
 
 // ===================================
 // 🔧 FIX: Expose Data APIs on Port 3001
 // ===================================
-appDoctor.get('/api/doctor/appointments', async (req, res) => {
+appAdmin.get('/api/doctor/appointments', async (req, res) => {
     try {
         const { doctor_id, date, startDate, endDate } = req.query;
         if (!doctor_id) return res.status(400).json({ error: 'doctor_id required' });
@@ -1022,9 +1240,9 @@ appDoctor.get('/api/doctor/appointments', async (req, res) => {
         let q = `
             SELECT a.id, a.pat_num, a.doctor_id, a.doctor_name, a.patient_name, a.patient_phone, a.patient_email, 
                    a.appointment_date, a.appointment_time, a.payment_amount, a.pat_id, a.patient_age, a.patient_sex,
-                   p.symptoms, p.diagnosis, p.medicines, p.lab_tests, p.advice, p.follow_up_date,
+                   p.symptoms, p.clinical_findings, p.diagnosis, p.medicines, p.lab_tests, p.advice, p.note, p.follow_up_date, p.updated_at,
                    p.vital_bp, p.vital_pulse, p.vital_spo2, p.vital_temp,
-                   CASE WHEN p.id IS NOT NULL THEN 'Completed' ELSE a.status END as status
+                   a.status
             FROM appointments a
             LEFT JOIN prescriptions p ON a.id = p.appointment_id
             WHERE a.doctor_id = ?`;
@@ -1043,7 +1261,7 @@ appDoctor.get('/api/doctor/appointments', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-appDoctor.get('/api/doctor/patient-history', async (req, res) => {
+appAdmin.get('/api/doctor/patient-history', async (req, res) => {
     try {
         const { patient_phone, patient_id } = req.query;
         if (!patient_phone && !patient_id) return res.status(400).json({ error: 'Patient identifier required' });
@@ -1079,7 +1297,7 @@ appDoctor.get('/api/doctor/patient-history', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-appDoctor.post('/api/doctor/prescribe', async (req, res) => {
+appAdmin.post('/api/doctor/prescribe', async (req, res) => {
     console.log("------------------------------------------");
     console.log("Received /api/doctor/prescribe request (Doctor Port)");
     console.log("Request Body:", JSON.stringify(req.body, null, 2)); // DEBUG
@@ -1089,7 +1307,7 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
         const {
             id, doctor_id, doctor_name,
             vital_bp, vital_pulse, vital_spo2, vital_temp,
-            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date
+            symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, note, follow_up_date
         } = req.body;
 
         if (!id || !doctor_id) return res.status(400).json({ error: 'id and doctor_id required' });
@@ -1102,7 +1320,8 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
                     appointment_id INT,
                     doctor_id INT,
                     doctor_name VARCHAR(255),
-                    patient_id INT,
+                    patient_name VARCHAR(255),
+                    pat_num VARCHAR(64),
                     visit_date DATETIME,
                     vital_bp VARCHAR(50),
                     vital_pulse VARCHAR(50),
@@ -1114,32 +1333,61 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
                     medicines LONGTEXT,
                     lab_tests TEXT,
                     advice TEXT,
+                    note TEXT,
                     follow_up_date DATE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             `);
-            // Check if column exists by selecting it
+            // Check if columns exist
             try {
                 await dbPatient.promise().query("SELECT clinical_findings FROM prescriptions LIMIT 1");
             } catch (colErr) {
-                // Column likely missing, add it
-                console.log("Adding clinical_findings column (Doctor Port)...");
+                console.log("Adding clinical_findings column...");
                 await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN clinical_findings TEXT AFTER symptoms");
+            }
+            try {
+                await dbPatient.promise().query("SELECT note FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN note TEXT");
+            }
+            try {
+                await dbPatient.promise().query("SELECT updated_at FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP");
+            }
+            try {
+                await dbPatient.promise().query("SELECT patient_name FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN patient_name VARCHAR(255) AFTER patient_id");
+            }
+            try {
+                await dbPatient.promise().query("SELECT pat_num FROM prescriptions LIMIT 1");
+            } catch (colErr) {
+                await dbPatient.promise().query("ALTER TABLE prescriptions ADD COLUMN pat_num VARCHAR(64) AFTER patient_name");
             }
         } catch (tableErr) {
             console.error("Table creation warning:", tableErr);
             // continue, maybe it exists or user lacks permission, but worth trying
         }
 
-        // 1. Get patient_id from appointment to link it
-        const [aptRows] = await dbPatient.promise().query('SELECT pat_id FROM appointments WHERE id=?', [id]);
-        const patient_id = aptRows.length ? aptRows[0].pat_id : null;
+        // 1. Get patient_name and pat_num from appointment
+        const [aptRows] = await dbPatient.promise().query('SELECT patient_name, patient_phone, patient_email, pat_num FROM appointments WHERE id=?', [id]);
+        let patient_name = aptRows.length ? aptRows[0].patient_name : null;
+        const patient_phone = aptRows.length ? aptRows[0].patient_phone : null;
+        const patient_email = aptRows.length ? aptRows[0].patient_email : null;
+        const pat_num = aptRows.length ? aptRows[0].pat_num : null;
+
 
         // CHECK IF PRESCRIPTION EXISTS FOR THIS PATIENT (Single Record per Patient)
-        // Logic: Try by patient_id first. If not available (rare), fallback to appointment_id.
+        // Logic: Try by pat_num first. Then appointment_id.
         let existing = [];
-        if (patient_id) {
-            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE patient_id = ? LIMIT 1', [patient_id]);
+        if (pat_num) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE pat_num = ? LIMIT 1', [pat_num]);
+        }
+        // Fallback
+        if (existing.length === 0) {
+            [existing] = await dbPatient.promise().query('SELECT id FROM prescriptions WHERE appointment_id = ? LIMIT 1', [id]);
         }
         // Fallback: If no patient-linked record found, check if one exists for this appointment
         if (existing.length === 0) {
@@ -1150,21 +1398,41 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
 
         if (existing.length > 0) {
             // UPDATE EXISTING RECORD (Single Sheet concept)
-            console.log(`Updating existing unique prescription for Patient ${patient_id}`);
+            console.log(`Updating existing unique prescription for Patient ${pat_num || id}`);
             const updateSql = `
                 UPDATE prescriptions SET 
                 appointment_id=?, visit_date=NOW(),
                 vital_bp=?, vital_pulse=?, vital_spo2=?, vital_temp=?, 
-                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, follow_up_date=?
+                symptoms=?, clinical_findings=?, diagnosis=?, medicines=?, lab_tests=?, advice=?, note=?, follow_up_date=?, patient_name=?, pat_num=?
                 WHERE id=?
             `;
             const updateParams = [
                 id, // update appointment_id to current one
                 vital_bp, vital_pulse, vital_spo2, vital_temp,
-                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null,
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, note || '', follow_up_date || null, patient_name || '', pat_num || '',
                 existing[0].id
             ];
             await dbPatient.promise().query(updateSql, updateParams);
+
+            // Update Status Logic: Completed -> Modified -> Modified(1) -> ...
+            try {
+                const [sRows] = await dbPatient.promise().query("SELECT status FROM appointments WHERE id=?", [id]);
+                if (sRows.length > 0) {
+                    let currentStatus = sRows[0].status;
+                    let newStatus = 'Modified';
+
+                    if (currentStatus === 'Modified') {
+                        newStatus = 'Modified(1)';
+                    } else if (currentStatus && currentStatus.startsWith('Modified(')) {
+                        const match = currentStatus.match(/Modified\((\d+)\)/);
+                        if (match) {
+                            newStatus = `Modified(${parseInt(match[1]) + 1})`;
+                        }
+                    }
+
+                    await dbPatient.promise().query("UPDATE appointments SET status=? WHERE id=?", [newStatus, id]);
+                }
+            } catch (errStatus) { console.error("Error updating status:", errStatus); }
 
             // Return the existing ID
             return res.json({ success: true, insertId: existing[0].id, message: 'Updated (Single Record)' });
@@ -1173,14 +1441,14 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
             // INSERT NEW
             const insertSql = `
                 INSERT INTO prescriptions 
-                (appointment_id, doctor_id, doctor_name, patient_id, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, follow_up_date)
-                VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (appointment_id, doctor_id, doctor_name, patient_name, pat_num, visit_date, vital_bp, vital_pulse, vital_spo2, vital_temp, symptoms, clinical_findings, diagnosis, medicines, lab_tests, advice, note, follow_up_date)
+                VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             const params = [
-                id, doctor_id, doctor_name, patient_id,
+                id, doctor_id, doctor_name, patient_name || '', pat_num || '',
                 vital_bp, vital_pulse, vital_spo2, vital_temp,
-                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, follow_up_date || null
+                symptoms, clinical_findings, diagnosis, medJSON, lab_tests, advice, note || '', follow_up_date || null
             ];
 
             const [r] = await dbPatient.promise().query(insertSql, params);
@@ -1201,7 +1469,7 @@ appDoctor.post('/api/doctor/prescribe', async (req, res) => {
 });
 
 // NEW: Dashboard Stats API
-appDoctor.get('/api/doctor/dashboard-stats', async (req, res) => {
+appAdmin.get('/api/doctor/dashboard-stats', async (req, res) => {
     try {
         const { doctor_id } = req.query;
         if (!doctor_id) return res.status(400).json({ error: 'doctor_id required' });
@@ -1245,13 +1513,8 @@ appDoctor.get('/api/doctor/dashboard-stats', async (req, res) => {
     }
 });
 
-// Start Servers
-appAdmin.listen(4000, () => {
-    console.log('✅ Admin: http://localhost:4000');
-    console.log('✅ Doctor (Legacy): http://localhost:4000/doctor_login');
-});
-appDoctor.listen(3001, () => console.log('✅ Doctor: http://localhost:3001'));
-appPublic.listen(3000, () => console.log('✅ Patient: http://localhost:3000'));
+// End of Doctor APIs
+
 
 // ============================================================
 // 📋 PATIENT MY APPOINTMENTS ENDPOINT
@@ -1289,6 +1552,317 @@ appPublic.get('/api/my-appointments', async (req, res) => {
 // ============================================================
 // 📋 BILL GENERATION ENDPOINT
 // ============================================================
+// ===================================
+// 💊 PRESCRIPTION PDF GENERATOR
+// ===================================
+appPublic.get('/api/generate-prescription/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Fetch Appointment + Doctor + Prescription
+        //    We join tables to get all data in one go or use sequential queries.
+        //    Using sequential for safety and clarity similar to existing logic.
+
+        // A. Appointment Basic Info
+        const [aptRows] = await dbPatient.promise().query(
+            "SELECT * FROM appointments WHERE id=?", [id]
+        );
+        console.log(`[PEM Gen] Req ID: ${id}, Apt Found: ${aptRows.length}`);
+
+        if (!aptRows.length) return res.status(404).send('Appointment not found');
+        const apt = aptRows[0];
+
+        // B. Prescription Data
+        const [rxRows] = await dbPatient.promise().query(
+            "SELECT * FROM prescriptions WHERE appointment_id=?", [id]
+        );
+        console.log(`[PEM Gen] Rx Found: ${rxRows.length}`);
+
+        const rx = rxRows.length ? rxRows[0] : {};
+        if (rxRows.length > 0) {
+            console.log(`[PEM Gen] Rx ID: ${rxRows[0].id}, Meds Raw Type: ${typeof rxRows[0].medicines}`);
+        } else {
+            console.warn(`[PEM Gen] No prescription row found for Apt ID ${id}`);
+        }
+
+        // C. Doctor Info
+        const [docRows] = await dbDoctor.promise().query(
+            "SELECT * FROM doctors WHERE DoctorID=?", [apt.doctor_id]
+        );
+        const doc = docRows.length ? docRows[0] : {};
+
+        // Helpers
+        const safe = (val) => val || '';
+        const formatDate = (d) => {
+            if (!d) return new Date().toLocaleDateString('en-GB');
+            return new Date(d).toLocaleDateString('en-GB');
+        };
+
+        // Meds Parsing
+        let medList = [];
+        try {
+            medList = rx.medicines ? (typeof rx.medicines === 'string' ? JSON.parse(rx.medicines) : rx.medicines) : [];
+        } catch (e) { }
+
+        // Tests
+        const tests = rx.lab_tests ? rx.lab_tests : '';
+
+        // Vitals
+        const bp = rx.vital_bp || '-';
+        const pulse = rx.vital_pulse || '-';
+        const spo2 = rx.vital_spo2 || '-';
+        const temp = rx.vital_temp || '-';
+
+        // 2. Build HTML (Modern Letterhead Style)
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Prescription #${id}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+            <style>
+                @page { margin: 0; size: A4; }
+                body { margin: 0; font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; -webkit-print-color-adjust: exact; }
+                
+                /* 1. BRAND HEADER (Logo Only) */
+                .brand-header {
+                    background: #fff;
+                    padding: 30px 40px 10px 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 15px;
+                    border-bottom: 2px solid #0f172a;
+                }
+                .logo-icon {
+                    width: 40px; height: 40px;
+                    background: #0f172a;
+                    color: white;
+                    border-radius: 8px;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 24px; font-weight: bold;
+                }
+                .brand-text h1 { margin: 0; font-size: 28px; color: #0f172a; letter-spacing: -1px; text-transform: uppercase; }
+                .brand-text p { margin: 2px 0 0; font-size: 10px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+
+                /* 2. DOCTOR STRIP */
+                .doc-strip {
+                    background: #f8fafc;
+                    padding: 15px 40px;
+                    border-bottom: 1px solid #e2e8f0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .doc-main { display: flex; flex-direction: column; }
+                .doc-name { font-size: 18px; font-weight: 700; color: #334155; }
+                .doc-meta { font-size: 11px; color: #64748b; margin-top: 2px; font-weight: 500; }
+                .doc-reg { border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #475569; }
+
+                /* 3. PATIENT GRID */
+                .pat-grid {
+                    padding: 15px 40px;
+                    display: grid;
+                    grid-template-columns: auto 1fr auto 1fr;
+                    gap: 10px 30px;
+                    align-items: center;
+                    font-size: 12px;
+                    border-bottom: 4px solid #f1f5f9;
+                }
+                .pat-kv { display: flex; flex-direction: column; }
+                .pat-lbl { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+                .pat-val { font-size: 13px; font-weight: 600; color: #1e293b; }
+
+                /* BODY */
+                .container { display: flex; min-height: 700px; padding-top: 20px; }
+                
+                /* LEFT */
+                .sidebar {
+                    width: 250px;
+                    padding: 0 0 0 40px;
+                    border-right: 1px solid #f1f5f9;
+                }
+                /* RIGHT */
+                .main-content {
+                    flex: 1;
+                    padding: 0 40px 0 30px;
+                }
+
+                .block { margin-bottom: 30px; }
+                .block-title {
+                    font-size: 11px; font-weight: 800; color: #0f172a;
+                    text-transform: uppercase; letter-spacing: 1px;
+                    margin-bottom: 8px; border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 4px; display: inline-block;
+                }
+                .block-txt { font-size: 13px; color: #334155; line-height: 1.6; }
+
+                /* Rx SYMBOL */
+                .rx-sym { 
+                    font-family: 'Times New Roman', serif; font-style: italic; font-size: 32px; 
+                    color: #0f172a; margin-bottom: 10px;
+                }
+
+                /* TABLE */
+                table { width: 100%; border-collapse: collapse; }
+                th { text-align: left; font-size: 10px; color: #94a3b8; padding-bottom: 8px; text-transform: uppercase; }
+                td { padding: 10px 0; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+                .m-name { font-weight: 600; font-size: 14px; color: #0f172a; }
+                .m-instr { font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px; }
+
+                /* FOOTER */
+                .footer {
+                    padding: 20px 40px;
+                    border-top: 4px solid #f1f5f9;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                }
+                .sig-line { width: 200px; border-top: 1px solid #0f172a; text-align: right; padding-top: 5px; font-size: 12px; font-weight: 600; }
+
+            </style>
+        </head>
+        <body onload="print()">
+
+            <!-- 1. HEADER (BRAND) -->
+            <div class="brand-header">
+                <div class="logo-icon">+</div>
+                <div class="brand-text">
+                    <h1>RM HealthCare</h1>
+                    <p>Excellence in Care</p>
+                </div>
+            </div>
+
+            <!-- 2. DOCTOR -->
+            <div class="doc-strip">
+                <div class="doc-main">
+                    <div class="doc-name">Dr. ${safe(doc.FirstName)} ${safe(doc.LastName)}</div>
+                    <div class="doc-meta">${safe(doc.Degrees)}</div>
+                    <div class="doc-meta" style="color:#0f172a;">${safe(doc.Specialization || 'General Physician')}</div>
+                </div>
+                <div>
+                    <span class="doc-reg">Reg: ${safe(doc.RegNumber)}</span>
+                </div>
+            </div>
+
+            <!-- 3. PATIENT -->
+            <div class="pat-grid">
+                <div class="pat-kv">
+                    <span class="pat-lbl">Patient Name</span>
+                    <span class="pat-val">${safe(apt.patient_name)}</span>
+                </div>
+                <div class="pat-kv">
+                    <span class="pat-lbl">Age / Sex</span>
+                    <span class="pat-val">${safe(apt.patient_age)} Yrs / ${safe(apt.patient_sex)}</span>
+                </div>
+                <div class="pat-kv">
+                    <span class="pat-lbl">Date</span>
+                    <span class="pat-val">${formatDate(apt.appointment_date)}</span>
+                </div>
+                <div class="pat-kv">
+                    <span class="pat-lbl">ID / UHID</span>
+                    <span class="pat-val">OP/${id} <span style="color:#cbd5e1">|</span> ${safe(rx.pat_num || apt.pat_num || '-')}</span>
+                </div>
+            </div>
+
+            <!-- 4. BODY -->
+            <div class="container">
+                <div class="sidebar">
+                    <div class="block">
+                        <div class="block-title">Details</div>
+                        <div class="block-txt">
+                            <div style="margin-bottom:15px;">
+                                <div style="font-size:10px; color:#94a3b8; font-weight:700;">BP</div>
+                                <div>${bp} mmHg</div>
+                            </div>
+                            <div style="margin-bottom:15px;">
+                                <div style="font-size:10px; color:#94a3b8; font-weight:700;">Pulse</div>
+                                <div>${pulse} bpm</div>
+                            </div>
+                            <div style="margin-bottom:15px;">
+                                <div style="font-size:10px; color:#94a3b8; font-weight:700;">Weight</div>
+                                <div>${safe(rx.weight) || '-'} kg</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="block">
+                        <div class="block-title">Chief Complaints</div>
+                        <div class="block-txt">${safe(rx.symptoms).replace(/\\n/g, '<br>') || '-'}</div>
+                    </div>
+
+                    <div class="block">
+                        <div class="block-title">Diagnosis</div>
+                        <div class="block-txt" style="font-weight:600;">${safe(rx.diagnosis) || '-'}</div>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    <div class="rx-sym">Rx</div>
+                    
+                    <div class="block">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="40%">Medicine</th>
+                                    <th width="20%">Dose</th>
+                                    <th width="20%">Frequency</th>
+                                    <th width="20%">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${medList.map(m => `
+                                <tr>
+                                    <td>
+                                        <div class="m-name">${m.name}</div>
+                                        <div class="m-instr">${m.instr || ''}</div>
+                                    </td>
+                                    <td style="font-weight:600; font-size:13px;">${m.dose}</td>
+                                    <td style="font-size:13px;">${m.freq}</td>
+                                    <td style="font-size:13px;">${m.dur}</td>
+                                </tr>
+                                `).join('')}
+                                ${medList.length === 0 ? '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">- No Medicines -</td></tr>' : ''}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${tests ? `
+                    <div class="block" style="margin-top:40px;">
+                        <div class="block-title">Investigations</div>
+                        <div class="block-txt">${tests}</div>
+                    </div>` : ''}
+
+                    <div class="block" style="margin-top:20px;">
+                        <div class="block-title">Advice / Note</div>
+                        <div class="block-txt">${safe(rx.advice).replace(/\\n/g, '<br>') || '-'}</div>
+                        <div class="block-txt" style="margin-top:5px; color:#64748b;">${safe(rx.note).replace(/\\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="footer">
+                <div style="font-size:12px; color:#64748b;">
+                    <strong>Next Follow Up:</strong> ${rx.follow_up_date ? new Date(rx.follow_up_date).toLocaleDateString() : 'When required'}
+                </div>
+                <div class="sig-line">
+                    Dr. ${safe(doc.LastName)}
+                </div>
+            </div>
+
+        </body>
+        </html>
+        `;
+
+        res.send(html);
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error generating prescription: ' + e.message);
+    }
+});
+
 appPublic.get('/api/generate-bill/:appointmentId', async (req, res) => {
     try {
         const { appointmentId } = req.params;
@@ -1381,182 +1955,193 @@ appPublic.get('/api/generate-bill/:appointmentId', async (req, res) => {
         }
 
         // Build HTML (paste-ready, unescaped template)
+        // Build HTML (paste-ready, unescaped template)
         const billHTML = `<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Invoice - RM HealthCare</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-  :root{
-    --bg: #f4f7fb;
-    --card: #ffffff;
-    --primary: #0b61d8;
-    --accent: #0f4c81;
-    --muted: #6b7280;
-    --silver: #d1d5db;
-  }
-  *{box-sizing:border-box}
-  body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#111; padding:18px;}
-  .wrap{max-width:880px; margin:0 auto;}
-  .card{background:var(--card); border-radius:10px; padding:26px; box-shadow:0 6px 22px rgba(15,23,42,0.06); border:1px solid rgba(15,23,42,0.04);}
-  .header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px;}
-  .brand{display:flex; gap:14px; align-items:center;}
-  .logo{width:72px; height:72px; border-radius:8px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:22px;}
-  .brand-meta{line-height:1;}
-  .brand-meta .name{font-size:18px; font-weight:700; color:var(--accent);}
-  .brand-meta .tag{font-size:12px; color:var(--muted); margin-top:2px;}
+    <meta charset="utf-8">
+    <title>Invoice #${billNo}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; padding: 40px; margin: 0; color: #1e293b; -webkit-print-color-adjust: exact; }
+        .invoice-box { max-width: 850px; margin: 0 auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .logo-section { display: flex; gap: 15px; align-items: center; }
+        .logo-box { width: 60px; height: 60px; background: #0056b3; color: white; border-radius: 8px; font-weight: 700; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        .company-info h1 { margin: 0; font-size: 20px; color: #0056b3; }
+        .company-info p { margin: 2px 0 0; color: #64748b; font-size: 13px; }
+        
+        .bill-meta { text-align: right; font-size: 13px; line-height: 1.6; }
+        .bill-meta strong { color: #0f172a; }
+        .bill-id { color: #0056b3; font-weight: 600; font-size: 14px; margin-bottom: 4px; display:block; }
 
-  .doc-info{text-align:right; font-size:13px; color:var(--muted);}
-  .doc-info .label{font-weight:700; color:#0b3a7a; display:block; font-size:12px;}
+        /* Two Column Details */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .info-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; }
+        .card-title { color: #3b82f6; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; }
+        
+        .info-row { display: flex; margin-bottom: 8px; font-size: 13px; }
+        .info-label { width: 100px; color: #64748b; }
+        .info-val { font-weight: 500; color: #0f172a; flex: 1; }
 
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
-  .box{background:linear-gradient(180deg, rgba(11,97,216,0.03), rgba(255,255,255,0)); border:1px solid var(--silver); padding:12px; border-radius:8px; font-size:13px;}
-  .box .title{font-weight:700; color:var(--accent); margin-bottom:8px; font-size:12px;}
-  .kv{display:flex; gap:8px; margin-bottom:6px;}
-  .kv .k{width:110px; color:var(--muted); font-weight:600;}
-  .kv .v{flex:1; font-weight:600; color:#0b2546;}
+        /* Token Badge */
+        .token-section { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+        .token-left h4 { margin: 0 0 10px; font-size: 13px; color: #64748b; }
+        .token-badge { background: #0056b3; color: white; padding: 10px 24px; border-radius: 50px; font-size: 16px; font-weight: 700; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .token-right { font-size: 12px; color: #64748b; text-align: right; }
+        .token-right strong { color: #0056b3; display: block; margin-bottom: 4px; font-size: 13px; }
 
-  .token{margin:16px 0; display:flex; align-items:center; justify-content:space-between; gap:12px;}
-  .token .pill{background:linear-gradient(90deg,var(--primary),var(--accent)); color:white; padding:10px 16px; border-radius:999px; font-weight:800; letter-spacing:1px;}
-  .token .meta{font-size:13px; color:var(--muted); text-align:right;}
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 12px 16px; text-align: left; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
+        .text-right { text-align: right; }
+        
+        .total-box { width: 300px; margin-left: auto; background: #fff; }
+        .t-row { display: flex; justify-content: space-between; padding: 8px 16px; font-size: 13px; }
+        .t-row.final { background: #eff6ff; color: #1e3a8a; font-weight: 700; font-size: 15px; border-radius: 6px; padding: 12px 16px; margin-top: 5px; }
 
-  table{width:100%; border-collapse:collapse; font-size:13px;}
-  thead th{background:#f6f9ff; color:var(--accent); text-align:left; padding:12px; border-bottom:1px solid var(--silver); font-weight:700;}
-  tbody td{padding:12px; border-bottom:1px dashed #e6eefc; color:#222;}
-  .text-right{text-align:right;}
-  .amount{font-weight:800; color:var(--accent);}
+        /* Footer & Payment */
+        .payment-info { margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 20px; display: flex; justify-content: space-between; }
+        .mode-block h4 { margin: 0 0 5px; color: #0056b3; font-size: 14px; }
+        .mode-block p { margin: 0; font-size: 13px; color: #64748b; }
+        .received-block { text-align: right; }
+        .received-block h4 { margin: 0 0 5px; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .received-block .amount { font-size: 24px; font-weight: 800; color: #0f172a; }
 
-  .totals{display:flex; justify-content:flex-end; margin-top:12px;}
-  .totals .table{width:320px; border:1px solid var(--silver); border-radius:8px; overflow:hidden; background:linear-gradient(180deg,#fff,#fbfdff);}
-  .totals .row{display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f1f5f9;}
-  .totals .row.total{font-weight:900; background:#f6f9ff; color:var(--accent);}
+        .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #94a3b8; }
+        .print-btn { background: #0f172a; color: white; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 500; font-size: 13px; transition: all 0.2s; }
+        .print-btn:hover { background: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-  .pay-info{display:flex; gap:20px; margin-top:18px; align-items:flex-start;}
-  .pay-info .left{flex:1; font-size:13px; color:var(--muted);}
-  .pay-info .right{width:260px; text-align:right; font-size:13px;}
-
-  .footer{margin-top:20px; text-align:center; color:var(--muted); font-size:12px; border-top:1px solid #eef2f7; padding-top:12px;}
-
-  .print-btn{display:inline-block; margin-top:12px; background:var(--accent); color:white; padding:10px 16px; border-radius:8px; font-weight:700; text-decoration:none;}
-  @media print{
-    body{padding:0; background:white}
-    .wrap{max-width:100%; padding:0}
-    .card{box-shadow:none; border: none; border-radius:0; padding:0}
-    .print-btn{display:none}
-  }
-</style>
+        @media print {
+            body { background: white; padding: 0; }
+            .invoice-box { box-shadow: none; padding: 20px; border-radius: 0; max-width: 100%; }
+            .print-btn { display: none; }
+            .token-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .t-row.final { background: #eff6ff !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" role="document" aria-label="Invoice">
-      <div class="header">
-        <div class="brand">
-          <div class="logo">RM</div>
-          <div class="brand-meta">
-            <div class="name">RM HealthCare</div>
-            <div class="tag">Comprehensive Care • Compassionate Service</div>
-          </div>
+    <div class="invoice-box">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo-box">RM</div>
+                <div class="company-info">
+                    <h1>RM HealthCare</h1>
+                    <p>Comprehensive Care • Compassionate Service</p>
+                </div>
+            </div>
+            <div class="bill-meta">
+                <span class="bill-id">Bill No. # ${billNo}</span>
+                <p><strong>Invoice ID:</strong> ${billId}<br>
+                <strong>Bill Date:</strong> ${billDateSimple}</p>
+            </div>
         </div>
 
-                <div class="doc-info" aria-hidden="false">
-                    <div><span class="label">Bill No.</span><div>#${billNo}</div></div>
-          <div style="margin-top:8px;"><span class="label">Invoice ID</span><div>${apt.id}</div></div>
-          <div style="margin-top:8px;"><span class="label">Bill Date</span><div>${billDateSimple}</div></div>
+        <!-- Info Grid -->
+        <div class="info-grid">
+            <!-- Patient -->
+            <div class="info-card">
+                <div class="card-title">Patient</div>
+                <div class="info-row"><div class="info-label">Name</div><div class="info-val">${apt.patient_name || 'N/A'}</div></div>
+                <div class="info-row"><div class="info-label">Phone</div><div class="info-val">${apt.patient_phone || '-'}</div></div>
+                <div class="info-row"><div class="info-label">Email</div><div class="info-val">${apt.patient_email || '-'}</div></div>
+            </div>
+            <!-- Appointment -->
+            <div class="info-card">
+                <div class="card-title">Appointment</div>
+                <div class="info-row"><div class="info-label">Appt ID</div><div class="info-val">#${appointmentId}</div></div>
+                <div class="info-row"><div class="info-label">Date</div><div class="info-val">${apptDateSimple}</div></div>
+                <div class="info-row"><div class="info-label">Time</div><div class="info-val">${apt.appointment_time || '-'}</div></div>
+                <div class="info-row"><div class="info-label">Doctor</div><div class="info-val">Dr. ${apt.doctor_name || ''}</div></div>
+                <div class="info-row"><div class="info-label">Department</div><div class="info-val">${department}</div></div>
+            </div>
         </div>
-      </div>
 
-      <div class="grid" role="region" aria-label="Patient and Appointment Details">
-        <div class="box" aria-label="Patient">
-          <div class="title">Patient</div>
-          <div class="kv"><div class="k">Name</div><div class="v">${apt.patient_name || 'N/A'}</div></div>
-          <div class="kv"><div class="k">Phone</div><div class="v">${apt.patient_phone || 'N/A'}</div></div>
-          <div class="kv"><div class="k">Email</div><div class="v">${apt.patient_email || 'N/A'}</div></div>
+        <!-- Token -->
+        <div class="token-section">
+            <div class="token-left">
+                <h4>Your Appointment Token</h4>
+                <div class="token-badge">${apptToken}</div>
+            </div>
+            <div class="token-right">
+                <strong>Keep this for your records</strong>
+                Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </div>
         </div>
 
-        <div class="box" aria-label="Appointment">
-          <div class="title">Appointment</div>
-          <div class="kv"><div class="k">Appt ID</div><div class="v">#${apt.id}</div></div>
-          <div class="kv"><div class="k">Date</div><div class="v">${apptDateSimple}</div></div>
-          <div class="kv"><div class="k">Time</div><div class="v">${apt.appointment_time || 'N/A'}</div></div>
-          <div class="kv"><div class="k">Doctor</div><div class="v">Dr. ${apt.doctor_name || 'N/A'}</div></div>
-          <div class="kv"><div class="k">Department</div><div class="v">${department}</div></div>
-        </div>
-      </div>
-
-      <div class="token" role="region" aria-label="Token">
-        <div>
-          <div style="font-size:12px; color:var(--muted); font-weight:600">Your Appointment Token</div>
-          <div class="pill">${apptToken}</div>
-        </div>
-        <div class="meta">
-          <div style="font-weight:700; color:var(--accent)">Keep this for your records</div>
-          <div style="margin-top:6px; color:var(--muted); font-size:12px">Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</div>
-        </div>
-      </div>
-
-      <div style="margin-top:10px;">
-        <table role="table" aria-label="Billing details">
-          <thead>
-            <tr>
-              <th style="width:48px">#</th>
-              <th>Particulars</th>
-              <th class="text-right" style="width:80px">Qty</th>
-              <th class="text-right" style="width:120px">Rate (₹)</th>
-              <th class="text-right" style="width:80px">GST</th>
-              <th class="text-right" style="width:140px">Amount (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>Doctor Consultation Fee</td>
-              <td class="text-right">1</td>
-              <td class="text-right">${(Number(amount || 0)).toFixed(2)}</td>
-              <td class="text-right">18%</td>
-              <td class="text-right amount">${(Number((amount || 0) * 1.18)).toFixed(2)}</td>
-            </tr>
-          </tbody>
+        <!-- Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>Particulars</th>
+                    <th class="text-right" style="width:100px">Qty</th>
+                    <th class="text-right" style="width:120px">Rate (₹)</th>
+                    <th class="text-right" style="width:100px">GST</th>
+                    <th class="text-right" style="width:120px">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Doctor Consultation Fee</td>
+                    <td class="text-right">1</td>
+                    <td class="text-right">${(Number(amount || 0)).toFixed(2)}</td>
+                    <td class="text-right">18%</td>
+                    <td class="text-right"><strong>${(Number(totalAmount || 0)).toFixed(2)}</strong></td>
+                </tr>
+            </tbody>
         </table>
-      </div>
 
-      <div class="totals" role="region" aria-label="Totals">
-        <div class="table" aria-hidden="false">
-          <div class="row"><div>Sub Total</div><div>₹ ${(Number(amount || 0)).toFixed(2)}</div></div>
-          <div class="row"><div>GST (18%)</div><div>₹ ${(Number(gst || (Number(amount || 0) * 0.18))).toFixed(2)}</div></div>
-          <div class="row total"><div>Total Payable</div><div>₹ ${(Number(totalAmount || ((Number(amount || 0) + Number(gst || (Number(amount || 0) * 0.18)))))).toFixed(2)}</div></div>
+        <!-- Totals -->
+        <div class="total-box">
+            <div class="t-row">
+                <span>Sub Total</span>
+                <span>₹${(Number(amount || 0)).toFixed(2)}</span>
+            </div>
+            <div class="t-row">
+                <span>GST (18%)</span>
+                <span>₹${(Number(gst || 0)).toFixed(2)}</span>
+            </div>
+            <div class="t-row final">
+                <span>Total Payable</span>
+                <span>₹${(Number(totalAmount || 0)).toFixed(2)}</span>
+            </div>
         </div>
-      </div>
 
-      <div class="pay-info" role="region" aria-label="Payment info">
-        <div class="left">
-          <div style="font-weight:700; color:var(--accent); margin-bottom:6px">Payment Details</div>
-          <div style="margin-bottom:6px">Mode: ${apt.payment_amount ? 'Online' : 'Offline'}</div>
-          <div style="margin-bottom:6px">Particulars: Consultation</div>
-          <div style="margin-top:8px; font-size:12px; color:var(--muted)">Note: This is a computer-generated invoice and does not require a physical signature.</div>
+        <!-- Payment & Footer -->
+        <div class="payment-info">
+            <div class="mode-block">
+                <h4>Payment Details</h4>
+                <p>Mode: ${apt.payment_amount ? 'Online / Paid' : 'Cash / Due'}</p>
+                <p style="margin-top:2px">Particulars: Consultation</p>
+                <p style="margin-top:10px; font-size:11px; color:#94a3b8">Note: This is a computer-generated invoice and does not require a physical signature.</p>
+            </div>
+            <div class="received-block">
+                <h4>Received</h4>
+                <div class="amount">₹${apt.payment_amount ? (Number(totalAmount || 0)).toFixed(2) : '0.00'}</div>
+            </div>
         </div>
-        <div class="right">
-          <div style="font-weight:700; margin-bottom:6px">Received</div>
-          <div style="font-size:20px; font-weight:900; color:var(--accent)">₹ ${(Number(totalAmount || ((Number(amount || 0) + Number(gst || (Number(amount || 0) * 0.18)))))).toFixed(2)}</div>
-        </div>
-      </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
-        <div style="font-size:13px; color:var(--muted)">
-          RM HEALTH CARE<br>
-          123 Medical Avenue, Kolkata - 700094<br>
-          Phone: +91-XXXXXXXXXX
+        <div class="footer">
+            <div>
+                <strong>RM HEALTH CARE</strong><br>
+                123 Medical Avenue, Kolkata - 700094<br>
+                Phone: +91-XXXXXXXXXX
+            </div>
+            <a href="#" class="print-btn" onclick="window.print(); return false;">Print / Save PDF</a>
         </div>
-        <div style="text-align:right">
-          <a class="print-btn" href="#" onclick="window.print();return false">Print / Save PDF</a>
+        
+        <div style="text-align:center; font-size:11px; color:#cbd5e1; margin-top:20px">
+            System generated invoice • ${new Date().toISOString().split('T')[0]}
         </div>
-      </div>
-
-      <div class="footer">
-        Generated on ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} • This is a system generated invoice.
-      </div>
     </div>
-  </div>
 </body>
 </html>`;
 
@@ -1588,4 +2173,49 @@ appPublic.get('/api/generate-bill/:appointmentId', async (req, res) => {
         console.error('generate-bill error', e && e.message ? e.message : e);
         res.status(500).json({ error: e.message || String(e) });
     }
+});
+
+// ============================================================
+// 🚀 START SERVERS
+// ============================================================
+const PORT_PATIENT = 3000;
+const PORT_ADMIN = 4000;
+
+// Migration: Fix users table date_of_birth to allow NULL (since we removed it from frontend)
+(async function migrateUsersDOB() {
+    try {
+        console.log('Running migration: Make users.date_of_birth nullable...');
+        // Try MODIFY for MySQL
+        await dbPatient.promise().query("ALTER TABLE users MODIFY COLUMN date_of_birth VARCHAR(50) NULL");
+        console.log('✅ Migration successful: date_of_birth is now nullable.');
+    } catch (e) {
+        // Ignore if error (e.g. column doesn't exist or already done)
+        console.warn('Migration warning (date_of_birth):', e.message);
+    }
+})();
+
+// Migration: Ensure Doctors Audit Columns (Retry)
+(async function migrateDoctorsAudit() {
+    try {
+        console.log('Running migration: Ensure Doctors Audit Columns...');
+        const cols = [
+            "ADD COLUMN created_by VARCHAR(100) NULL",
+            "ADD COLUMN updated_by VARCHAR(100) NULL",
+            "ADD COLUMN updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP"
+        ];
+        for (const c of cols) {
+            try { await dbDoctor.promise().query(`ALTER TABLE doctors ${c}`); } catch (e) {
+                if (e.code !== 'ER_DUP_FIELDNAME') console.error("Audit col error:", e.message);
+            }
+        }
+        console.log('✅ Doctors Audit Columns Verified (created_by, updated_by, updated_at).');
+    } catch (e) { console.error("Error audit cols:", e.message); }
+})();
+
+appPublic.listen(PORT_PATIENT, () => {
+    console.log(`✅ Patient Server running at http://localhost:${PORT_PATIENT}`);
+});
+
+appAdmin.listen(PORT_ADMIN, () => {
+    console.log(`✅ Admin/Doctor Server running at http://localhost:${PORT_ADMIN}`);
 });

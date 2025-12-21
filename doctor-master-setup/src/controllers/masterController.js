@@ -11,17 +11,17 @@ async function fetchMasterList(tableName, columnName = 'name') {
 // Helper function to add a new name to a table
 async function addMasterItem(tableName, columnName = 'name', itemName) {
     if (!itemName) throw new Error(`${columnName} is required.`);
-    
+
     // Check if item already exists (case-insensitive check for better UX)
-    const [existing] = await db.query(`SELECT 1 FROM ?? WHERE LOWER(??) = LOWER(?)`, 
-                                      [tableName, columnName, itemName]);
+    const [existing] = await db.query(`SELECT 1 FROM ?? WHERE LOWER(??) = LOWER(?)`,
+        [tableName, columnName, itemName]);
     if (existing.length > 0) {
         return { message: `${columnName} already exists.` };
     }
 
     // Insert new item
-    const [result] = await db.query(`INSERT INTO ?? (??) VALUES (?)`, 
-                                    [tableName, columnName, itemName]);
+    const [result] = await db.query(`INSERT INTO ?? (??) VALUES (?)`,
+        [tableName, columnName, itemName]);
     return { id: result.insertId, message: `${columnName} added successfully.` };
 }
 
@@ -30,7 +30,7 @@ async function addMasterItem(tableName, columnName = 'name', itemName) {
 exports.getDepartments = async (req, res) => {
     try {
         // এখানে Doctors টেবিলের 'Department' কলাম থেকে DISTINCT নাম নেওয়া হচ্ছে
-        const list = await fetchMasterList('Doctors', 'Department'); 
+        const list = await fetchMasterList('Doctors', 'Department');
         res.json({ list });
     } catch (error) {
         console.error('Error fetching departments:', error);
@@ -42,7 +42,7 @@ exports.addDepartment = async (req, res) => {
     try {
         // নতুন ডিপার্টমেন্ট নামটি Doctors টেবিলের 'Department' কলামে যোগ করা হবে
         const { name } = req.body;
-        const result = await addMasterItem('Doctors', 'Department', name); 
+        const result = await addMasterItem('Doctors', 'Department', name);
         res.status(201).json(result);
     } catch (error) {
         console.error('Error adding department:', error);
@@ -55,7 +55,7 @@ exports.addDepartment = async (req, res) => {
 exports.getDoctorTypes = async (req, res) => {
     try {
         // এখানে Doctors টেবিলের 'DoctorType' কলাম থেকে DISTINCT নাম নেওয়া হচ্ছে
-        const list = await fetchMasterList('Doctors', 'DoctorType'); 
+        const list = await fetchMasterList('Doctors', 'DoctorType');
         res.json({ list });
     } catch (error) {
         console.error('Error fetching doctor types:', error);
@@ -67,10 +67,58 @@ exports.addDoctorType = async (req, res) => {
     try {
         // নতুন ডক্টর টাইপ নামটি Doctors টেবিলের 'DoctorType' কলামে যোগ করা হবে
         const { name } = req.body;
-        const result = await addMasterItem('Doctors', 'DoctorType', name); 
+        const result = await addMasterItem('Doctors', 'DoctorType', name);
         res.status(201).json(result);
     } catch (error) {
         console.error('Error adding doctor type:', error);
         res.status(400).json({ error: error.message || 'Failed to add doctor type' });
     }
+};
+
+// --- Roles Functions ---
+exports.getRoles = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM roles ORDER BY id ASC');
+        res.json({ roles: rows });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+exports.addRole = async (req, res) => {
+    try {
+        const { role_name, permissions } = req.body;
+        if (!role_name) return res.status(400).json({ error: 'Role name required' });
+
+        // permissions should be a JSON string or object
+        const perms = permissions ? JSON.stringify(permissions) : null;
+
+        await db.query('INSERT INTO roles (role_name, permissions) VALUES (?, ?)', [role_name, perms]);
+        res.json({ message: 'Role added' });
+    } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Role already exists' });
+        res.status(500).json({ error: e.message });
+    }
+};
+
+exports.updateRole = async (req, res) => {
+    try {
+        const { role_name, permissions } = req.body;
+        const id = req.params.id;
+
+        if (!role_name) return res.status(400).json({ error: 'Role name required' });
+
+        const perms = permissions ? JSON.stringify(permissions) : null;
+
+        await db.query('UPDATE roles SET role_name=?, permissions=? WHERE id=?', [role_name, perms, id]);
+        res.json({ message: 'Role updated successfully' });
+    } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY') return res.status(400).json({ error: 'Role name already exists' });
+        res.status(500).json({ error: e.message });
+    }
+};
+
+exports.deleteRole = async (req, res) => {
+    try {
+        await db.query('DELETE FROM roles WHERE id=?', [req.params.id]);
+        res.json({ message: 'Role deleted' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
 };

@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin — Appointments</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            --primary: #4f46e5;
+            /* Indigo */
+            --primary-light: #818cf8;
+            --bg-body: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --sidebar-w: 260px;
+            --header-h: 70px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+        }
+
+        .logo-area {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(to right, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f46e5, #ec4899);
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            margin-right: 12px;
+            color: white;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .nav-links {
+            flex: 1;
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 12px;
+            color: #94a3b8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, #4f46e5, #4338ca);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Area */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            height: var(--header-h);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 16px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            background: #f8fafc;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            flex: 1;
+            position: relative;
+            min-width: 280px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid var(--border);
+            outline: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .date-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #fff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .date-inputs span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .date-inputs input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            color: var(--text-main);
+            font-size: 13px;
+            padding: 0;
+            margin: 0;
+            width: auto;
+            cursor: pointer;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #fff;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 16px 24px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+            transition: background 0.1s;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-outline:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #eef2ff;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            width: 550px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.open .modal-box {
+            transform: scale(1);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        input:focus,
+        select:focus {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        /* Flatpickr Customization to match theme */
+        .flatpickr-calendar {
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange,
+        .flatpickr-day.selected.inRange,
+        .flatpickr-day.startRange.inRange,
+        .flatpickr-day.endRange.inRange,
+        .flatpickr-day:hover,
+        .flatpickr-day.prevMonthDay:hover,
+        .flatpickr-day.nextMonthDay:hover,
+        .flatpickr-day:focus,
+        .flatpickr-day.prevMonthDay:focus,
+        .flatpickr-day.nextMonthDay:focus {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+    </style>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heartbeat"></i></div>
+            <span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item active" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i> Patient Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i>
+                Role Master</a>
+            <a class="nav-item" href="/admin/mis/mis.html" data-perm="mis_reports"><i class="fas fa-chart-line"></i> MIS
+                Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div>
+                <div style="font-weight:700; font-size:18px">Appointments Management</div>
+                <div style="font-size:13px; color:var(--text-muted)">Edit and manage bookings</div>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="loadData()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+        </header>
+
+        <div class="content-scroll">
+            <div class="container">
+                <div class="toolbar">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input id="search" placeholder="Search Patient, Doctor, Phone..." onkeyup="render()">
+                    </div>
+                    <div class="date-inputs">
+                        <span>From:</span>
+                        <input type="date" id="dateFrom" onchange="render()">
+                    </div>
+                    <div class="date-inputs">
+                        <span>To:</span>
+                        <input type="date" id="dateTo" onchange="render()">
+                    </div>
+                    <div id="count" class="badge" style="background:#e0f2fe; color:#0369a1; margin-left:10px">0 found
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table id="apptTable">
+                        <thead>
+                            <tr>
+                                <th>Patient No</th>
+                                <th>Bill No</th>
+                                <th>Date / Time</th>
+                                <th>Patient</th>
+                                <th>Contact</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <th style="text-align:right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; margin-bottom:20px">Modify Appointment</h3>
+            <form id="editForm">
+                <input type="hidden" name="id">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div>
+                        <label>Patient Name</label>
+                        <input name="patient_name" required>
+                    </div>
+                    <div>
+                        <label>Phone</label>
+                        <input name="patient_phone" required>
+                    </div>
+                    <div>
+                        <label>Date</label>
+                        <!-- Flatpickr Input -->
+                        <input name="appointment_date" id="fpDate" type="text" placeholder="Select Date"
+                            style="background-color:white !important" required>
+                    </div>
+                    <div>
+                        <label>Time</label>
+                        <input name="appointment_time" type="time">
+                    </div>
+                    <div style="grid-column: span 2">
+                        <label>Doctor</label>
+                        <select name="doctor_id" id="doctorSelect" onchange="updateDocInfo()">
+                            <option value="">Select Doctor</option>
+                        </select>
+                        <!-- Dynamic Doctor Info -->
+                        <div id="docInfo"
+                            style="margin-top:5px; font-size:12px; color:var(--primary); background:#eef2ff; padding:8px; border-radius:8px; display:none">
+                        </div>
+                        <div id="dateError"
+                            style="margin-top:5px; font-size:12px; color:#ef4444; background:#fef2f2; padding:8px; border-radius:8px; display:none; border:1px solid #fecaca">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px; text-align:right">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN_KEY = 'admin_token';
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) location.href = '/login.html';
+
+        let appointments = [];
+        let doctors = [];
+        let fpInstance = null; // Flatpickr Instance
+
+        // Init Flatpickr
+        document.addEventListener('DOMContentLoaded', () => {
+            fpInstance = flatpickr("#fpDate", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                disable: [], // Dynamic
+                onChange: function (selectedDates, dateStr, instance) {
+                    checkDate();
+                }
+            });
+        });
+
+        async function api(url, method = 'GET', body = null) {
+            const headers = { 'x-admin-key': token, 'Content-Type': 'application/json' };
+            // Audit Trail Header
+            const uStr = localStorage.getItem('admin_user');
+            if (uStr) { try { headers['x-admin-user'] = JSON.parse(uStr).username || 'Admin'; } catch (e) { } }
+
+            try {
+                const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+                if (res.status === 401) { location.href = '/login.html'; return; }
+                return await res.json();
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadData() {
+            // Load Doctors first for dropdown
+            const docs = await api('/api/admin/doctors');
+            if (docs && docs.doctors) doctors = docs.doctors;
+
+            // If api/admin/doctors is not available, try public api
+            if (!doctors.length) {
+                const publicRes = await fetch('/api/doctors').then(r => r.json()).catch(e => ({}));
+                if (publicRes.doctors) doctors = publicRes.doctors;
+            }
+
+            const docSel = document.getElementById('doctorSelect');
+            docSel.innerHTML = '<option value="">Select Doctor</option>' + doctors.map(d => `<option value="${d.id || d.DoctorID}">${d.first_name || d.DoctorName}</option>`).join('');
+
+            // Load Appointments
+            const res = await api('/api/admin/appointments');
+            if (res && res.appointments) {
+                appointments = res.appointments;
+                render();
+            }
+        }
+
+        // --- Real-time Availability Check ---
+        function updateDocInfo() {
+            const docId = document.getElementById('doctorSelect').value;
+            const infoBox = document.getElementById('docInfo');
+
+            // Clear previous Flatpickr rules
+            if (fpInstance) fpInstance.set('disable', []);
+
+            if (!docId) {
+                infoBox.style.display = 'none';
+                checkDate();
+                return;
+            }
+
+            const doc = doctors.find(d => (d.id || d.DoctorID) == docId);
+            if (doc) {
+                const daysStr = doc.opd_days || '';
+                const limit = doc.daily_limit || 20;
+                infoBox.innerHTML = `<i class="fas fa-info-circle"></i> <b>Schedule:</b> ${daysStr || 'All Days'} <span style="margin-left:10px"><b>Limit:</b> ${limit}/day</span>`;
+                infoBox.style.display = 'block';
+
+                // Update Flatpickr to disable invalid days
+                if (daysStr && fpInstance) {
+                    const map = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };
+                    // Parse allowed days indices
+                    const allowed = daysStr.split(',').map(d => map[d.trim().substring(0, 3)]).filter(x => x !== undefined);
+
+                    if (allowed.length > 0) {
+                        fpInstance.set('disable', [
+                            function (date) {
+                                // return true to disable
+                                return !allowed.includes(date.getDay());
+                            }
+                        ]);
+                    }
+                }
+                checkDate();
+            }
+        }
+
+        function checkDate() {
+            // Use Flatpickr Value
+            const dateVal = document.querySelector('input[name="appointment_date"]').value;
+            const docId = document.getElementById('doctorSelect').value;
+            const errBox = document.getElementById('dateError');
+            const saveBtn = document.getElementById('saveBtn');
+            const currentId = document.querySelector('input[name="id"]').value;
+
+            errBox.style.display = 'none';
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+
+            if (!dateVal || !docId) return;
+
+            const doc = doctors.find(d => (d.id || d.DoctorID) == docId);
+            if (!doc) return;
+
+            // 1. Day Check (Redundant if Flatpickr works, but good for safety)
+            if (doc.opd_days) {
+                const dateObj = new Date(dateVal);
+                const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                const allowedDays = doc.opd_days.split(',').map(s => s.trim());
+                if (!allowedDays.includes(dayName)) {
+                    errBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <b>Not Available:</b> Dr. ${doc.first_name || doc.DoctorName} only sits on <b>${doc.opd_days}</b>.`;
+                    errBox.style.display = 'block';
+                    saveBtn.disabled = true;
+                    saveBtn.style.opacity = '0.5';
+                    return;
+                }
+            }
+
+            // 2. Limit Check
+            const limit = doc.daily_limit || 20;
+            const count = appointments.filter(a =>
+                (a.doctor_id == docId) &&
+                (a.appointment_date && a.appointment_date.startsWith(dateVal)) &&
+                (a.id != currentId)
+            ).length;
+
+            if (count >= limit) {
+                errBox.innerHTML = `<i class="fas fa-hand-paper"></i> <b>Daily Limit Reached:</b> Already ${count} bookings for this day. (Max: ${limit})`;
+                errBox.style.display = 'block';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+            }
+        }
+
+        // Attach listener to date input
+        document.querySelector('input[name="appointment_date"]').addEventListener('change', checkDate);
+        // ------------------------------------
+
+        function render() {
+            const q = document.getElementById('search').value.toLowerCase().trim();
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
+
+            const filtered = appointments.filter(a => {
+                const text = `${a.patient_name} ${a.doctor_name} ${a.patient_phone} ${a.pat_num || ''} ${a.bill_id || ''}`.toLowerCase();
+                const matchesSearch = text.includes(q);
+
+                let matchesDate = true;
+                if (a.appointment_date) {
+                    const d = a.appointment_date.split('T')[0];
+                    if (from && d < from) matchesDate = false;
+                    if (to && d > to) matchesDate = false;
+                }
+                return matchesSearch && matchesDate;
+            });
+
+            document.getElementById('count').innerText = `${filtered.length} found`;
+
+            const tbody = document.getElementById('tbody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#999">No appointments found</td></tr>'; return; }
+
+            tbody.innerHTML = filtered.map(a => {
+                const apptDate = a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('en-GB') : '-';
+                const bookedDate = a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB') : '-';
+
+                let statusBadge = '';
+                const s = (a.status || '').toLowerCase();
+                let isVisited = s.includes('completed') || s.includes('modified');
+                if (isVisited) {
+                    statusBadge = `<span class="badge" style="background:#dcfce7; color:#166534"><i class="fas fa-check-circle" style="margin-right:4px"></i> Visited</span>`;
+                } else {
+                    statusBadge = `<span class="badge" style="background:#e0f2fe; color:#0369a1"><i class="fas fa-clock" style="margin-right:4px"></i> Waiting</span>`;
+                }
+
+                // Disable button if visited
+                const btnDisabled = isVisited ? 'disabled style="opacity:0.5; cursor:not-allowed; padding:4px 8px"' : 'style="padding:4px 8px"';
+                const btnClick = isVisited ? '' : `onclick='editItem(${JSON.stringify(a).replace(/'/g, "&apos;")})'`;
+
+                return `
+          <tr>
+            <td><strong>${a.pat_num || '-'}</strong></td>
+            <td><span style="color:var(--primary); font-family:monospace; font-weight:600">${a.bill_id || '-'}</span></td>
+            <td>Booked: ${bookedDate}<br><small style="color:#666">Appt: ${apptDate} ${a.appointment_time || ''}</small></td>
+            <td>${a.patient_name}</td>
+            <td>${a.patient_phone || '-'}</td>
+            <td>${a.doctor_name || '-'}</td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right">
+               <button class="btn btn-outline" ${btnDisabled} ${btnClick}><i class="fas fa-edit"></i> Modify</button>
+            </td>
+          </tr>
+        `
+            }).join('');
+        }
+
+        function editItem(item) {
+            const f = document.getElementById('editForm');
+            f.id.value = item.id;
+            f.patient_name.value = item.patient_name || '';
+            f.patient_phone.value = item.patient_phone || '';
+
+            // Set Date in Flatpickr
+            if (item.appointment_date && fpInstance) {
+                const d = item.appointment_date.split('T')[0];
+                fpInstance.setDate(d);
+            }
+
+            f.appointment_time.value = item.appointment_time || '';
+            f.doctor_id.value = item.doctor_id || '';
+
+            document.getElementById('editModal').classList.add('open');
+            // Check initial state
+            updateDocInfo();
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('open');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd.entries());
+
+            // --- VALIDATION: Doctor Availability ---
+            const selectedDoc = doctors.find(d => (d.id || d.DoctorID) == data.doctor_id);
+            if (selectedDoc) {
+                // 1. Day Check
+                if (data.appointment_date && selectedDoc.opd_days) {
+                    const dateObj = new Date(data.appointment_date);
+                    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"
+                    // server stores "Mon,Tue" etc.
+                    const allowedDays = selectedDoc.opd_days.split(',').map(s => s.trim());
+                    if (!allowedDays.includes(dayName)) {
+                        alert(`Doctor ${selectedDoc.first_name || selectedDoc.DoctorName || 'Selected'} is not available on ${dayName}.\nAvailable Days: ${selectedDoc.opd_days}`);
+                        return;
+                    }
+                }
+
+                // 2. Limit Check
+                const limit = selectedDoc.daily_limit || 20; // Default 20
+                // Count appointments for this doctor on this day (excluding current one being edited)
+                const count = appointments.filter(a =>
+                    (a.doctor_id == data.doctor_id) &&
+                    (a.appointment_date && a.appointment_date.startsWith(data.appointment_date)) &&
+                    (a.id != data.id)
+                ).length;
+
+                if (count >= limit) {
+                    alert(`Daily Limit Reached!\nDoctor allows only ${limit} patients per day.\nCurrent bookings: ${count}`);
+                    return;
+                }
+
+                data.doctor_name = selectedDoc.first_name ? `${selectedDoc.first_name} ${selectedDoc.last_name || ''}` : selectedDoc.DoctorName;
+            }
+            // ---------------------------------------
+
+            const res = await api('/api/admin/appointments/' + data.id, 'PATCH', data);
+            if (res && res.success) {
+                alert('Updated Successfully');
+                closeModal();
+                loadData();
+            } else {
+                alert('Update Failed');
+            }
+        });
+
+        loadData();
+    </script>
+</body>
+
+</html>

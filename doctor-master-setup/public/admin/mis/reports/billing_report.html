@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MIS - Billing Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-body: #f0f4f8;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --sidebar-w: 260px;
+            --header-h: 70px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .nav-links {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: var(--header-h);
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .report-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-print {
+            background: #3b82f6;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-print:hover {
+            background: #2563eb;
+        }
+
+        .btn-back {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 10px;
+        }
+
+        .btn-back:hover {
+            background: #f1f5f9;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-input {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            min-width: 200px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--primary);
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .date-input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heartbeat"></i></div><span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i> Patient Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i>
+                Role Master</a>
+            <a class="nav-item active" href="/admin/mis/mis.html" data-perm="mis_reports"><i
+                    class="fas fa-chart-line"></i> MIS Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="page-title">
+                <h2>Billing & Invoice Report</h2>
+                <div class="breadcrumb"><a href="/admin/mis/mis.html">MIS Reports</a> / Billing</div>
+            </div>
+            <div>
+                <a href="/admin/mis/mis.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                <button class="btn-export" onclick="exportTable('billTable', 'Billing_Report')"><i
+                        class="fas fa-file-excel"></i> Export Excel</button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="searchInput" class="filter-input"
+                        placeholder="Search by Bill ID, Patient, OB..." onkeyup="applyFilters()">
+                    <div class="date-group">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-muted)">From:</span>
+                        <input type="date" id="dateFrom" class="date-input" onchange="applyFilters()">
+                    </div>
+                    <div class="date-group">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-muted)">To:</span>
+                        <input type="date" id="dateTo" class="date-input" onchange="applyFilters()">
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="report-table" id="billTable">
+                        <thead>
+                            <tr>
+                                <th>Bill Number</th> <!-- Renamed -->
+                                <th>Patient Number</th> <!-- Renamed -->
+                                <th>Patient Name</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billBody">
+                            <tr>
+                                <td colspan="8" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/admin/appointments';
+        const ADMIN_KEY = 'my-secret-key';
+        let allBills = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const TOKEN_KEY = 'admin_token';
+            if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+            loadBills();
+        });
+
+        async function loadBills() {
+            try {
+                const res = await fetch(API, { headers: { 'x-admin-key': ADMIN_KEY } });
+                const data = await res.json();
+                const appointments = data.appointments || [];
+
+                allBills = appointments.map(a => {
+                    return {
+                        bill_id: a.bill_id || '-', // Use DB value
+                        pat_num: a.pat_num || '-',
+                        patient_name: a.patient_name,
+                        patient_phone: a.patient_phone,
+                        patient_email: a.patient_email,
+                        doctor_name: a.doctor_name,
+                        department: a.department || 'General',
+                        amount: a.payment_amount || 0,
+                        method: a.payment_method || 'Cash',
+                        status: a.payment_amount ? 'Paid' : (a.status === 'Completed' ? 'Paid' : 'Pending'),
+                        date: a.created_at,
+                        appt_id: a.id
+                    };
+                });
+
+                if (allBills.length === 0) {
+                    document.getElementById('billBody').innerHTML = '<tr><td colspan="8" style="text-align:center">No records found</td></tr>';
+                    return;
+                }
+                renderTable(allBills);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('billBody').innerHTML = '<tr><td colspan="8" style="color:red;text-align:center">Error loading data</td></tr>';
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('billBody');
+            if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">No matching records found</td></tr>'; return; }
+            tbody.innerHTML = data.map(b => `
+                <tr>
+                    <td>${b.bill_id}</td>
+                    <td>${b.pat_num}</td>
+                    <td>${b.patient_name || '-'}</td>
+                    <td>₹${b.amount}</td>
+                    <td>${b.method}</td>
+                    <td>${b.status === 'Paid' ? '<span style="color:green;font-weight:600">Paid</span>' : '<span style="color:orange">Pending</span>'}</td>
+                    <td>${formatDate(b.date)}</td>
+                    <td><button class="btn-print" onclick="openPrintWindow('${b.appt_id}')"><i class="fas fa-print"></i> Print</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const filtered = allBills.filter(b => {
+                const text = `${b.bill_id} ${b.pat_num} ${b.patient_name}`.toLowerCase();
+                const matchesSearch = text.includes(search);
+
+                let matchesDate = true;
+                if (b.date) {
+                    const rowDate = new Date(b.date).toISOString().split('T')[0];
+                    if (dateFrom && rowDate < dateFrom) matchesDate = false;
+                    if (dateTo && rowDate > dateTo) matchesDate = false;
+                }
+                return matchesSearch && matchesDate;
+            });
+            renderTable(filtered);
+        }
+
+        function exportTable(tableId, filename) {
+            const table = document.getElementById(tableId);
+            const clone = table.cloneNode(true);
+            const rows = clone.rows;
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].deleteCell(-1);
+            }
+            const wb = XLSX.utils.table_to_book(clone, { sheet: "Sheet1" });
+            XLSX.writeFile(wb, filename + "_" + new Date().toISOString().slice(0, 10) + ".xlsx");
+        }
+
+        function openPrintWindow(apptId) {
+            const bill = allBills.find(b => b.appt_id == apptId);
+            if (!bill) return;
+
+            // Calculate tax/breakdown (Client-side approximation since report data is simple)
+            const amount = Number(bill.amount) || 0;
+            // Assuming the 'amount' in report is the Total Paid. Back-calculate if needed, or just treat as total.
+            // In the server logic: total = amount + gst. 
+            // Here we only have 'amount' (payment_amount). Let's assume it's the Total.
+            // Or if the user wants it exactly like server:
+            // Server: amount = fee. gst = fee*0.18. total = amount + gst.
+            // Report just has 'payment_amount'. Let's assume it's the Base Fee for now to be safe, or just show Total.
+            // Let's emulate the server:
+            const baseAmount = Number(bill.amount);
+            const gst = Number((baseAmount * 0.18).toFixed(2));
+            const totalAmount = Number((baseAmount + gst).toFixed(2));
+
+            const printWindow = window.open('', '_blank', 'width=900,height=800');
+            printWindow.document.write(`
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Invoice - RM HealthCare</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      :root{
+        --bg: #f4f7fb;
+        --card: #ffffff;
+        --primary: #0b61d8;
+        --accent: #0f4c81;
+        --muted: #6b7280;
+        --silver: #d1d5db;
+      }
+      *{box-sizing:border-box}
+      body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#111; padding:18px;}
+      .wrap{max-width:880px; margin:0 auto;}
+      .card{background:var(--card); border-radius:10px; padding:26px; box-shadow:0 6px 22px rgba(15,23,42,0.06); border:1px solid rgba(15,23,42,0.04);}
+      .header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px;}
+      .brand{display:flex; gap:14px; align-items:center;}
+      .logo{width:72px; height:72px; border-radius:8px; background:linear-gradient(135deg,var(--primary),var(--accent)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:22px;}
+      .brand-meta{line-height:1;}
+      .brand-meta .name{font-size:18px; font-weight:700; color:var(--accent);}
+      .brand-meta .tag{font-size:12px; color:var(--muted); margin-top:2px;}
+      .doc-info{text-align:right; font-size:13px; color:var(--muted);}
+      .doc-info .label{font-weight:700; color:#0b3a7a; display:block; font-size:12px;}
+      .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
+      .box{background:linear-gradient(180deg, rgba(11,97,216,0.03), rgba(255,255,255,0)); border:1px solid var(--silver); padding:12px; border-radius:8px; font-size:13px;}
+      .box .title{font-weight:700; color:var(--accent); margin-bottom:8px; font-size:12px;}
+      .kv{display:flex; gap:8px; margin-bottom:6px;}
+      .kv .k{width:110px; color:var(--muted); font-weight:600;}
+      .kv .v{flex:1; font-weight:600; color:#0b2546;}
+      .token{margin:16px 0; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+      .token .pill{background:linear-gradient(90deg,var(--primary),var(--accent)); color:white; padding:10px 16px; border-radius:999px; font-weight:800; letter-spacing:1px;}
+      .token .meta{font-size:13px; color:var(--muted); text-align:right;}
+      table{width:100%; border-collapse:collapse; font-size:13px;}
+      thead th{background:#f6f9ff; color:var(--accent); text-align:left; padding:12px; border-bottom:1px solid var(--silver); font-weight:700;}
+      tbody td{padding:12px; border-bottom:1px dashed #e6eefc; color:#222;}
+      .text-right{text-align:right;}
+      .amount{font-weight:800; color:var(--accent);}
+      .totals{display:flex; justify-content:flex-end; margin-top:12px;}
+      .totals .table{width:320px; border:1px solid var(--silver); border-radius:8px; overflow:hidden; background:linear-gradient(180deg,#fff,#fbfdff);}
+      .totals .row{display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f1f5f9;}
+      .totals .row.total{font-weight:900; background:#f6f9ff; color:var(--accent);}
+      .pay-info{display:flex; gap:20px; margin-top:18px; align-items:flex-start;}
+      .pay-info .left{flex:1; font-size:13px; color:var(--muted);}
+      .pay-info .right{width:260px; text-align:right; font-size:13px;}
+      .footer{margin-top:20px; text-align:center; color:var(--muted); font-size:12px; border-top:1px solid #eef2f7; padding-top:12px;}
+      .print-btn{display:inline-block; margin-top:12px; background:var(--accent); color:white; padding:10px 16px; border-radius:8px; font-weight:700; text-decoration:none;}
+      @media print{
+        body{padding:0; background:white}
+        .wrap{max-width:100%; padding:0}
+        .card{box-shadow:none; border: none; border-radius:0; padding:0}
+        .print-btn{display:none}
+      }
+    </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="document" aria-label="Invoice">
+      <div class="header">
+        <div class="brand">
+          <div class="logo">RM</div>
+          <div class="brand-meta">
+            <div class="name">RM HealthCare</div>
+            <div class="tag">Comprehensive Care • Compassionate Service</div>
+          </div>
+        </div>
+
+        <div class="doc-info" aria-hidden="false">
+          <div><span class="label">Bill No.</span><div>#${bill.bill_id}</div></div>
+          <div style="margin-top:8px;"><span class="label">Invoice ID</span><div>${bill.appt_id}</div></div>
+          <div style="margin-top:8px;"><span class="label">Bill Date</span><div>${formatDate(bill.date)}</div></div>
+        </div>
+      </div>
+
+      <div class="grid" role="region" aria-label="Patient and Appointment Details">
+        <div class="box" aria-label="Patient">
+          <div class="title">Patient</div>
+          <div class="kv"><div class="k">Name</div><div class="v">${bill.patient_name}</div></div>
+          <div class="kv"><div class="k">Phone</div><div class="v">${bill.patient_phone || '-'}</div></div>
+          <div class="kv"><div class="k">Email</div><div class="v">${bill.patient_email || '-'}</div></div>
+        </div>
+
+        <div class="box" aria-label="Appointment">
+          <div class="title">Appointment</div>
+          <div class="kv"><div class="k">Appt ID</div><div class="v">#${bill.appt_id}</div></div>
+          <div class="kv"><div class="k">Date</div><div class="v">${formatDate(bill.date)}</div></div>
+          <div class="kv"><div class="k">Doctor</div><div class="v">${bill.doctor_name || 'General'}</div></div>
+          <div class="kv"><div class="k">Department</div><div class="v">${bill.department || 'General'}</div></div>
+        </div>
+      </div>
+
+      <div class="token" role="region" aria-label="Token">
+        <div>
+          <div style="font-size:12px; color:var(--muted); font-weight:600">Your Appointment Token</div>
+          <div class="pill">${bill.pat_num}</div>
+        </div>
+        <div class="meta">
+          <div style="font-weight:700; color:var(--accent)">Keep this for your records</div>
+          <div style="margin-top:6px; color:var(--muted); font-size:12px">Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <table role="table" aria-label="Billing details">
+          <thead>
+            <tr>
+              <th style="width:48px">#</th>
+              <th>Particulars</th>
+              <th class="text-right" style="width:80px">Qty</th>
+              <th class="text-right" style="width:120px">Rate (₹)</th>
+              <th class="text-right" style="width:80px">GST</th>
+              <th class="text-right" style="width:140px">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Doctor Consultation Fee</td>
+              <td class="text-right">1</td>
+              <td class="text-right">${baseAmount.toFixed(2)}</td>
+              <td class="text-right">18%</td>
+              <td class="text-right amount">${totalAmount.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals" role="region" aria-label="Totals">
+        <div class="table" aria-hidden="false">
+          <div class="row"><div>Sub Total</div><div>₹ ${baseAmount.toFixed(2)}</div></div>
+          <div class="row"><div>GST (18%)</div><div>₹ ${gst.toFixed(2)}</div></div>
+          <div class="row total"><div>Total Payable</div><div>₹ ${totalAmount.toFixed(2)}</div></div>
+        </div>
+      </div>
+
+      <div class="pay-info" role="region" aria-label="Payment info">
+        <div class="left">
+          <div style="font-weight:700; color:var(--accent); margin-bottom:6px">Payment Details</div>
+          <div style="margin-bottom:6px">Mode: ${bill.method}</div>
+          <div style="margin-bottom:6px">Particulars: Consultation</div>
+          <div style="margin-top:8px; font-size:12px; color:var(--muted)">Note: This is a computer-generated invoice and does not require a physical signature.</div>
+        </div>
+        <div class="right">
+          <div style="font-weight:700; margin-bottom:6px">Received</div>
+          <div style="font-size:20px; font-weight:900; color:var(--accent)">₹ ${totalAmount.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+        <div style="font-size:13px; color:var(--muted)">
+          RM HEALTH CARE<br>
+          123 Medical Avenue, Kolkata - 700094<br>
+          Phone: +91-XXXXXXXXXX
+        </div>
+        <div style="text-align:right">
+          <a class="print-btn" href="#" onclick="window.print();return false">Print / Save PDF</a>
+        </div>
+      </div>
+
+      <div class="footer">
+        Generated on ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} • This is a system generated invoice.
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+            `);
+            printWindow.document.close();
+        }
+    </script>
+</body>
+
+</html>

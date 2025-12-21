@@ -335,3 +335,54 @@
                 background: linear-gradient(120deg, #e0f7fa, #bbdefb);
             }
         }
+
+/* Custom Toggle Switch for DOB/Age */
+.toggle-container {
+    display: flex;
+    background-color: #f1f3f5;
+    border-radius: 30px;
+    padding: 4px;
+    margin-bottom: 20px;
+    position: relative;
+    border: 1px solid #e9ecef;
+    cursor: pointer;
+}
+
+.toggle-option {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    user-select: none;
+}
+
+.toggle-option.active-mode {
+    color: #fff;
+}
+
+.toggle-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: calc(50% - 4px);
+    background: var(--primary);
+    border-radius: 25px;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(42, 125, 225, 0.3);
+}
+
+/* Hide default radio buttons */
+input[name="dob_type"] {
+    display: none;
+}

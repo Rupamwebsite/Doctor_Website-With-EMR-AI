@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Console — MIS Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --bg-body: #f0f4f8;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --sidebar-w: 260px;
+            --header-h: 70px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .nav-links {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: var(--header-h);
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Dashboard Menu List */
+        .report-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .report-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            color: var(--text-main);
+            gap: 20px;
+        }
+
+        .report-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .report-item:hover .icon-box {
+            background: var(--primary);
+            color: white;
+        }
+
+        .report-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .report-info p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .arrow-icon {
+            margin-left: auto;
+            color: #cbd5e1;
+        }
+
+        .report-item:hover .arrow-icon {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heartbeat"></i></div>
+            <span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i> Patient
+                Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i>
+                Role Master</a>
+            <a class="nav-item active" href="/admin/mis/mis.html" data-perm="mis_reports"><i
+                    class="fas fa-chart-line"></i> MIS Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="page-title">
+                <h2>MIS Reports</h2>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="report-list">
+
+                <a href="/admin/mis/reports/doctor_list.html" class="report-item">
+                    <div class="icon-box"><i class="fas fa-user-md"></i></div>
+                    <div class="report-info">
+                        <h3>Doctor List Report</h3>
+                        <p>Detailed list of registered doctors with contact and fee info.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+
+                <a href="/admin/mis/reports/user_list.html" class="report-item">
+                    <div class="icon-box"><i class="fas fa-users"></i></div>
+                    <div class="report-info">
+                        <h3>User List Report</h3>
+                        <p>System users directory with role and status details.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+
+                <a href="/admin/mis/reports/patient_list.html" class="report-item">
+                    <div class="icon-box"><i class="fas fa-procedures"></i></div>
+                    <div class="report-info">
+                        <h3>Patient Registry Report</h3>
+                        <p>Comprehensive list of registered patients.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+
+                <a href="/admin/mis/reports/appointment_report.html" class="report-item">
+                    <div class="icon-box"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="report-info">
+                        <h3>Appointment Report</h3>
+                        <p>All appointments with doctor and status details.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+
+                <a href="/admin/mis/reports/billing_report.html" class="report-item">
+                    <div class="icon-box"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="report-info">
+                        <h3>Billing & Invoice Report</h3>
+                        <p>Financial records, payment status, and revenue details.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+
+                <a href="/admin/mis/reports/sales_report.html" class="report-item">
+                    <div class="icon-box" style="background:var(--primary-dark)"><i class="fas fa-chart-pie"></i></div>
+                    <div class="report-info">
+                        <h3>Sales & Revenue Report</h3>
+                        <p>Detailed sales analysis with filters by doctor, date, and payment mode.</p>
+                    </div>
+                    <i class="fas fa-chevron-right arrow-icon"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Permission Check
+            try {
+                const TOKEN_KEY = 'admin_token';
+                const USER_KEY = 'admin_user';
+                if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+
+                const userStr = localStorage.getItem(USER_KEY);
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    if (user.role !== 'Super Admin') {
+                        const permissions = user.permissions || [];
+                        document.querySelectorAll('.nav-item[data-perm]').forEach(el => {
+                            const reqPerm = el.getAttribute('data-perm');
+                            if (!permissions.includes(reqPerm)) {
+                                el.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+            } catch (e) { console.error('Error applying permissions', e); }
+        });
+    </script>
+</body>
+
+</html>

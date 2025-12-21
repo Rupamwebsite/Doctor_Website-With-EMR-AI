@@ -410,6 +410,7 @@
     }
 
     /* Data Table */
+    /* Data Table */
     .table-responsive {
       overflow-x: auto;
     }
@@ -428,7 +429,6 @@
       font-size: 11px;
       padding: 14px 20px;
       text-align: left;
-      border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
 
@@ -639,7 +639,7 @@
     }
 
     /* Responsive */
-    @media (max-width: 1200px) {
+    @media (max-width: 768px) {
       .admin-grid {
         grid-template-columns: 1fr;
       }
@@ -652,7 +652,28 @@
 
   <script>
     const TOKEN_KEY = 'admin_token';
+    const USER_KEY = 'admin_user';
     if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+
+    // Permission Check
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        const userStr = localStorage.getItem(USER_KEY);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          // Super Admin bypass
+          if (user.role === 'Super Admin') return;
+
+          const permissions = user.permissions || [];
+          document.querySelectorAll('.nav-item[data-perm]').forEach(el => {
+            const reqPerm = el.getAttribute('data-perm');
+            if (!permissions.includes(reqPerm)) {
+              el.style.display = 'none';
+            }
+          });
+        }
+      } catch (e) { console.error('Error applying permissions', e); }
+    });
   </script>
 </head>
 
@@ -666,11 +687,23 @@
       <span font-size="16px">RM HealthCare</span>
     </div>
     <div class="nav-links">
-      <a class="nav-item active" href="/doctors-master.html"><i class="fas fa-user-md"></i> Doctor Master</a>
-      <a class="nav-item" href="/patient-registry.html"><i class="fas fa-procedures"></i> Patient Registry</a>
-      <a class="nav-item"><i class="fas fa-calendar-check"></i> Appointments</a>
-      <a class="nav-item"><i class="fas fa-file-invoice-dollar"></i> Billing & Invoice</a>
-      <a class="nav-item" href="./User_create.html"><i class="fas fa-user-plus"></i> Create Users</a>
+      <a class="nav-item active" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+        Doctor Master</a>
+      <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i class="fas fa-procedures"></i>
+        Patient Registry</a>
+      <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i class="fas fa-calendar-check"></i>
+        Appointments</a>
+      <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+          class="fas fa-file-prescription"></i> Patient
+        Prescriptions</a>
+      <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i> Billing &
+        Invoice</a>
+      <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i class="fas fa-user-plus"></i>
+        User Management</a>
+      <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i> Role
+        Master</a>
+      <a class="nav-item" href="/admin/mis/mis.html" data-perm="mis_reports"><i class="fas fa-chart-line"></i> MIS
+        Reports</a>
     </div>
   </aside>
 
@@ -730,6 +763,14 @@
               </div>
 
               <div class="input-box"><label>Specialization</label><input name="specialization" placeholder="" required>
+              </div>
+
+              <div class="row-2">
+                <div class="input-box"><label>Degrees <span
+                      style="font-size:11px; font-weight:400; color:#64748b;">(e.g. MBBS, MD, MS)</span></label><input
+                    name="degrees" placeholder="MBBS, MD (Medicine)"></div>
+                <div class="input-box"><label>Reg. Number</label><input name="reg_number"
+                    placeholder="Registration No."></div>
               </div>
 
               <div class="row-2">
@@ -805,6 +846,7 @@
                 <tr>
                   <th>ID</th>
                   <th>Doctor Profile</th>
+                  <th>Qualification</th>
                   <th>Department</th>
                   <th>Schedule</th>
                   <th>Fees</th>
@@ -902,7 +944,19 @@
 
     // API Call
     async function apiCall(url, method = 'GET', body = null, isForm = false) {
-      const headers = { 'x-admin-key': token }; if (!isForm) headers['Content-Type'] = 'application/json';
+      const headers = { 'x-admin-key': token };
+
+      // Audit Trail: Send logged in user info
+      try {
+        const uStr = localStorage.getItem('admin_user');
+        if (uStr) {
+          const u = JSON.parse(uStr);
+          const identifier = u.username || u.email || 'Admin';
+          headers['x-admin-user'] = identifier;
+        }
+      } catch (e) { }
+
+      if (!isForm) headers['Content-Type'] = 'application/json';
       try {
         const res = await fetch(url, { method, headers, body: isForm ? body : (body ? JSON.stringify(body) : null) });
         if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); location.href = '/login.html'; return; }
@@ -922,7 +976,7 @@
 
     async function loadDoctors() {
       loader(true);
-      const res = await apiCall(API + '/doctors');
+      const res = await apiCall(ADMIN + '/doctors');
       loader(false);
       if (res && res.doctors) {
         allDoctors = res.doctors;
@@ -956,9 +1010,17 @@
                 <img src="${d.image_url ? '/uploads/' + d.image_url : 'https://via.placeholder.com/50'}" class="doc-thumb">
                 <div class="doc-info">
                     <h4>${d.first_name} ${d.last_name || ''}</h4>
-                    <span>${d.doctor_type}</span>
+                    <span>${d.degrees || ''}</span>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:4px">
+                        ${d.created_by ? `Created by: ${d.created_by}` : ''}
+                        ${d.updated_by ? `<br>Updated by: ${d.updated_by} ${d.updated_at ? '(' + new Date(d.updated_at).toLocaleDateString() + ')' : ''}` : ''}
+                    </div>
                 </div>
             </div>
+        </td>
+        <td>
+            <div style="font-weight:600; font-size:13px; color:var(--text-main); line-height:1.4; width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.degrees || ''}">${d.degrees || '<span style="color:#ccc">--</span>'}</div>
+            ${d.reg_number ? `<div style="display:inline-block; font-size:11px; background:#eff6ff; color:var(--primary); font-weight:600; padding:2px 8px; border-radius:4px; margin-top:6px; border:1px solid #dbeafe;">Reg: ${d.reg_number}</div>` : ''}
         </td>
         <td>
             <div style="font-weight:500">${d.department}</div>
@@ -994,6 +1056,7 @@
         f.first_name.value = d.first_name; f.last_name.value = d.last_name;
         f.department.value = d.department; f.doctor_type.value = d.doctor_type;
         f.specialization.value = d.specialization; f.fees.value = d.fees;
+        f.degrees.value = d.degrees || ''; f.reg_number.value = d.reg_number || '';
         f.email.value = d.email; f.phone.value = d.phone; f.dob.value = d.dob;
         f.is_active.value = d.is_active ? 1 : 0;
         if (d.image_url) { document.getElementById('preview').src = `/uploads/${d.image_url}`; document.getElementById('preview').style.display = 'block'; }
@@ -1069,6 +1132,8 @@
         Department: d.department,
         Type: d.doctor_type,
         Specialization: d.specialization,
+        Degrees: d.degrees || '',
+        RegNumber: d.reg_number || '',
         Fees: d.fees,
         Phone: d.phone || '',
         Email: d.email || '',

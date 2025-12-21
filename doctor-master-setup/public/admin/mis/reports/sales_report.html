@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MIS - Sales & Revenue Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-body: #f0f4f8;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --sidebar-w: 260px;
+            --header-h: 70px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .nav-links {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: var(--header-h);
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            color: var(--primary);
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+
+        .stat-info h3 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .stat-info p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .report-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-back {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 10px;
+        }
+
+        .btn-back:hover {
+            background: #f1f5f9;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            min-width: 160px;
+            background: white;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heartbeat"></i></div><span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i> Patient Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i>
+                Role Master</a>
+            <a class="nav-item active" href="/admin/mis/mis.html" data-perm="mis_reports"><i
+                    class="fas fa-chart-line"></i> MIS Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="page-title">
+                <h2>Sales & Revenue Report</h2>
+                <div class="breadcrumb"><a href="/admin/mis/mis.html">MIS Reports</a> / Sales Analysis</div>
+            </div>
+            <div>
+                <a href="/admin/mis/mis.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                <button class="btn-export" onclick="exportTable('salesTable', 'Sales_Report')"><i
+                        class="fas fa-file-excel"></i> Export Excel</button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <!-- Summary Stats -->
+            <div class="summary-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(16,185,129,0.1); color:#10b981"><i
+                            class="fas fa-coins"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Revenue</h3>
+                        <p id="totalRevenue">₹0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(59,130,246,0.1); color:#3b82f6"><i
+                            class="fas fa-credit-card"></i></div>
+                    <div class="stat-info">
+                        <h3>Online Sales</h3>
+                        <p id="onlineRevenue">₹0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(245,158,11,0.1); color:#f59e0b"><i
+                            class="fas fa-money-bill-wave"></i></div>
+                    <div class="stat-info">
+                        <h3>Cash Sales</h3>
+                        <p id="cashRevenue">₹0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(99,102,241,0.1); color:#6366f1"><i
+                            class="fas fa-receipt"></i></div>
+                    <div class="stat-info">
+                        <h3>Total Invoices</h3>
+                        <p id="totalInvoices">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <span class="filter-label">Search</span>
+                        <input type="text" id="searchInput" class="filter-input" placeholder="Bill No, Patient..."
+                            onkeyup="applyFilters()">
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Doctor</span>
+                        <select id="doctorSelect" class="filter-select" onchange="applyFilters()">
+                            <option value="">All Doctors</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">Payment Mode</span>
+                        <select id="modeSelect" class="filter-select" onchange="applyFilters()">
+                            <option value="">All Modes</option>
+                            <option value="Online">Online</option>
+                            <option value="Cash">Cash</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">From Date</span>
+                        <input type="date" id="dateFrom" class="filter-select" onchange="applyFilters()">
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">To Date</span>
+                        <input type="date" id="dateTo" class="filter-select" onchange="applyFilters()">
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="report-table" id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill Number</th>
+                                <th>Patient Name</th>
+                                <th>Doctor</th>
+                                <th>Department</th>
+                                <th>Mode</th>
+                                <th>Status</th>
+                                <th style="text-align:right">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesBody">
+                            <tr>
+                                <td colspan="8" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#f1f5f9; font-weight:700;">
+                                <td colspan="7" style="text-align:right;">Total:</td>
+                                <td style="text-align:right;" id="tableTotal">₹0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/admin/appointments';
+        const ADMIN_KEY = 'my-secret-key';
+        let allData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const TOKEN_KEY = 'admin_token';
+            if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+            loadData();
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch(API, { headers: { 'x-admin-key': ADMIN_KEY } });
+                const data = await res.json();
+                const appointments = data.appointments || [];
+
+                // Process data
+                const doctorSet = new Set();
+
+                allData = appointments.map(a => {
+                    const year = a.created_at ? new Date(a.created_at).getFullYear() : new Date().getFullYear();
+                    const bl_num = `BL/${year}/${String(a.id).padStart(6, '0')}`;
+                    const amt = Number(a.payment_amount) || 0;
+
+                    if (a.doctor_name) doctorSet.add(a.doctor_name);
+
+                    return {
+                        id: a.id,
+                        bill_no: bl_num,
+                        patient: a.patient_name,
+                        doctor: a.doctor_name,
+                        dept: a.department || 'General',
+                        mode: a.payment_method || 'Cash', // Default to Cash if not verified online
+                        status: amt > 0 ? 'Paid' : 'Pending', // Simplified logic
+                        amount: amt,
+                        date: a.created_at
+                    };
+                });
+
+                // Populate Doctor Dropdown
+                const docSel = document.getElementById('doctorSelect');
+                doctorSet.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    docSel.appendChild(opt);
+                });
+
+                if (allData.length === 0) {
+                    document.getElementById('salesBody').innerHTML = '<tr><td colspan="8" style="text-align:center">No records found</td></tr>';
+                    return;
+                }
+
+                applyFilters(); // Render initially
+            } catch (e) {
+                console.error(e);
+                document.getElementById('salesBody').innerHTML = '<tr><td colspan="8" style="color:red;text-align:center">Error loading data</td></tr>';
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const doctor = document.getElementById('doctorSelect').value;
+            const mode = document.getElementById('modeSelect').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const filtered = allData.filter(item => {
+                const text = `${item.bill_no} ${item.patient} ${item.doctor}`.toLowerCase();
+                const matchesSearch = text.includes(search);
+                const matchesDoc = doctor ? item.doctor === doctor : true;
+
+                // Mode logic: If 'Cash', check if mode is 'Cash'. If 'Online', check for 'razorpay' or 'Online'
+                let matchesMode = true;
+                if (mode === 'Cash') matchesMode = (!item.mode || item.mode === 'Cash');
+                if (mode === 'Online') matchesMode = (item.mode && item.mode !== 'Cash');
+
+                let matchesDate = true;
+                if (item.date) {
+                    const rowDate = new Date(item.date).toISOString().split('T')[0];
+                    if (dateFrom && rowDate < dateFrom) matchesDate = false;
+                    if (dateTo && rowDate > dateTo) matchesDate = false;
+                }
+
+                return matchesSearch && matchesDoc && matchesMode && matchesDate;
+            });
+
+            renderTable(filtered);
+            updateSummary(filtered);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('salesBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">No matching records found</td></tr>';
+                document.getElementById('tableTotal').textContent = '₹0';
+                return;
+            }
+
+            let total = 0;
+            tbody.innerHTML = data.map(item => {
+                total += item.amount;
+                return `
+                <tr>
+                    <td>${formatDate(item.date)}</td>
+                    <td>${item.bill_no}</td>
+                    <td>${item.patient || '-'}</td>
+                    <td>${item.doctor || '-'}</td>
+                    <td>${item.dept}</td>
+                    <td>${item.mode === 'razorpay' ? 'Online' : item.mode}</td>
+                    <td>${item.status === 'Paid' ? '<span style="color:green;font-weight:600">Paid</span>' : '<span style="color:orange">Pending</span>'}</td>
+                    <td style="text-align:right">₹${item.amount}</td>
+                </tr>
+            `}).join('');
+
+            document.getElementById('tableTotal').textContent = `₹${total}`;
+        }
+
+        function updateSummary(data) {
+            const total = data.reduce((sum, item) => sum + item.amount, 0);
+            const online = data.filter(i => i.mode !== 'Cash').reduce((sum, item) => sum + item.amount, 0);
+            const cash = data.filter(i => i.mode === 'Cash' || !i.mode).reduce((sum, item) => sum + item.amount, 0);
+            const count = data.length;
+
+            document.getElementById('totalRevenue').textContent = `₹${total}`;
+            document.getElementById('onlineRevenue').textContent = `₹${online}`;
+            document.getElementById('cashRevenue').textContent = `₹${cash}`;
+            document.getElementById('totalInvoices').textContent = count;
+        }
+
+        function exportTable(tableId, filename) {
+            const table = document.getElementById(tableId);
+            const clone = table.cloneNode(true);
+            // Remove footer for clean data export if desired, or keep it
+            const wb = XLSX.utils.table_to_book(clone, { sheet: "Sales_Report" });
+            XLSX.writeFile(wb, filename + "_" + new Date().toISOString().slice(0, 10) + ".xlsx");
+        }
+    </script>
+</body>
+
+</html>

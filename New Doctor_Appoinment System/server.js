@@ -36,7 +36,7 @@ app.use('/uploads', express.static(uploadDir));
 const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
-    password: 'Rupam@123', 
+    password: 'Rupam@123',
     database: 'Doctor_Appoinment_DB'
 });
 
@@ -63,15 +63,15 @@ app.post('/login', async (req, res) => {
     try {
         // ক) অ্যাডমিন লগইন চেক
         // ...
-if(email === 'admin@hospital.com' && password === 'admin123') {
-     return res.status(200).json({ 
-         success: true, 
-         message: 'Admin Login successful!', 
-         token: 'admin_token', // <--- এই লাইনটি অবশ্যই যোগ করুন
-         redirect: '/admin/doctors-master.html' 
-     });
-}
-// ...
+        if (email === 'admin@hospital.com' && password === 'admin123') {
+            return res.status(200).json({
+                success: true,
+                message: 'Admin Login successful!',
+                token: 'admin_token', // <--- এই লাইনটি অবশ্যই যোগ করুন
+                redirect: '/admin/doctors-master.html'
+            });
+        }
+        // ...
 
         // খ) পেশেন্ট লগইন চেক
         const [users] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
@@ -80,10 +80,10 @@ if(email === 'admin@hospital.com' && password === 'admin123') {
         const isMatch = await bcrypt.compare(password, users[0].password);
         if (!isMatch) return res.status(401).json({ success: false, message: 'Wrong password' });
 
-        res.status(200).json({ 
-            success: true, 
-            message: 'Login successful!', 
-            redirect: '/patient/Patient_Dashboard.html' 
+        res.status(200).json({
+            success: true,
+            message: 'Login successful!',
+            redirect: '/patient/Patient_Dashboard.html'
         });
 
     } catch (error) {
@@ -94,14 +94,14 @@ if(email === 'admin@hospital.com' && password === 'admin123') {
 
 // ২. রেজিস্ট্রেশন (Registration)
 app.post('/register', async (req, res) => {
-    const { full_name, email, password, date_of_birth } = req.body;
+    const { full_name, email, password } = req.body;
     try {
         const hashed = await bcrypt.hash(password, 10);
-        await db.promise().query('INSERT INTO users (full_name, email, password, date_of_birth) VALUES (?, ?, ?, ?)', [full_name, email, hashed, date_of_birth]);
+        await db.promise().query('INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)', [full_name, email, hashed]);
         res.status(201).json({ success: true, message: 'Registered successfully!' });
-    } catch (e) { 
+    } catch (e) {
         console.error(e);
-        res.status(500).json({ success: false, message: 'Registration failed' }); 
+        res.status(500).json({ success: false, message: 'Registration failed' });
     }
 });
 
@@ -110,13 +110,13 @@ app.get('/api/doctors', async (req, res) => {
     const { active, specialization } = req.query;
     let query = 'SELECT * FROM doctors';
     let conditions = [];
-    
+
     // ফিল্টারিং
     if (active) conditions.push(`is_active = ${active === '1'}`);
     if (specialization) conditions.push(`specialization LIKE '%${specialization}%'`);
-    
+
     if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
-    
+
     try {
         const [rows] = await db.promise().query(query);
         res.json({ doctors: rows });
@@ -137,15 +137,15 @@ app.post('/api/admin/doctors', upload.single('image'), async (req, res) => {
     try {
         const { first_name, last_name, department, doctor_type, specialization, fees, phone, email, is_active } = req.body;
         const image_url = req.file ? req.file.filename : null;
-        
+
         await db.promise().query(
             `INSERT INTO doctors (first_name, last_name, department, doctor_type, specialization, fees, phone, email, image_url, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [first_name, last_name, department, doctor_type, specialization, fees, phone, email, image_url, is_active === 'true']
         );
         res.status(201).json({ message: 'Doctor added successfully' });
-    } catch (e) { 
+    } catch (e) {
         console.error(e);
-        res.status(500).json({ error: e.message }); 
+        res.status(500).json({ error: e.message });
     }
 });
 

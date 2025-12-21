@@ -542,6 +542,12 @@
                 </div>
             </div>
 
+            <div class="panel">
+                <label class="form-label">Note</label>
+                <textarea class="form-control" id="rxNote" style="height:60px;"
+                    placeholder="Private note or additional remarks..."></textarea>
+            </div>
+
         </main>
 
         <!-- RIGHT: TOOLS & VITALS -->
@@ -575,10 +581,6 @@
             <!-- FOLLOW UP -->
             <div style="margin-bottom:24px;">
                 <div class="panel-header">Follow Up</div>
-                <div style="margin-bottom:12px;">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-control" id="rxFollowupDate">
-                </div>
                 <div>
                     <label class="form-label">Note</label>
                     <input type="text" class="form-control" id="rxFollowupNote" placeholder="If symptoms persist...">
@@ -658,7 +660,7 @@
             if (pData.clinical_findings) document.getElementById('rxFindings').value = pData.clinical_findings;
             if (pData.diagnosis) document.getElementById('rxDiagnosis').value = pData.diagnosis;
             if (pData.advice) document.getElementById('rxAdvice').value = pData.advice;
-            if (pData.follow_up_date) document.getElementById('rxFollowupDate').value = pData.follow_up_date.split('T')[0];
+
 
             // Load History
             await loadHistory();
@@ -799,9 +801,7 @@
             if (h.clinical_findings) document.getElementById('rxFindings').value = h.clinical_findings;
 
             // Follow Up Date
-            if (h.follow_up_date) {
-                document.getElementById('rxFollowupDate').value = h.follow_up_date.split('T')[0];
-            }
+
 
             // Meds
             const medicinesContainer = document.getElementById("medicinesContainer");
@@ -942,7 +942,8 @@
                 medicines: meds,
                 lab_tests: Array.from(document.querySelectorAll('.test-name')).map(i => i.value.trim()).filter(x => x).join(', '),
                 advice: document.getElementById('rxAdvice').value,
-                follow_up_date: document.getElementById('rxFollowupDate').value || null,
+                note: document.getElementById('rxNote').value || '',
+                follow_up_date: null,
                 vital_bp: document.getElementById('vitalBP').value || null,
                 vital_pulse: document.getElementById('vitalPulse').value || null,
                 vital_spo2: document.getElementById('vitalSpo2').value || null,
@@ -987,10 +988,12 @@
         // --- PDF ---
         // Basic Shim reuse logic
         function downloadPrescriptionPDF() {
-            // In a real app we'd reuse the robust PDF generation logic 
-            // from dashboard or put it in a shared JS file.
-            // For now, alerting placeholder or basic logic.
-            alert("PDF Generation available after saving! (Or migrated logic needed)");
+            if (!pData || !pData.id) {
+                alert("No patient selected");
+                return;
+            }
+            // Open new endpoint in new tab
+            window.open('/api/generate-prescription/' + pData.id, '_blank');
         }
 
     </script>

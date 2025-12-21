@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Role Master — RM HealthCare</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #64748b;
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --radius: 16px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --font-family: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: margin-left 0.3s;
+            z-index: 20;
+        }
+
+        .logo-area {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links {
+            padding: 20px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            border-radius: 12px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .header {
+            height: 70px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .header span {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .content-scroll {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .wrap {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+            padding: 24px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: #ffffff;
+            color: var(--text-main);
+            font-family: var(--font-family);
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            background: #fff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-delete {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alert.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #d1fae5;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fee2e2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            text-align: left;
+            padding: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .role-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .perm-tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div
+                style="width:32px;height:32px;background:var(--primary);border-radius:8px;display:grid;place-items:center;margin-right:12px;color:white;">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i>
+                Patient Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item active" href="/admin/role_master.html" data-perm="role_master"><i
+                    class="fas fa-user-tag"></i> Role Master</a>
+            <a class="nav-item" href="/admin/mis/mis.html" data-perm="mis_reports"><i class="fas fa-chart-line"></i> MIS
+                Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div>
+                <h1>Role Master</h1>
+                <span>Manage user roles and permissions</span>
+            </div>
+            <div>
+                <span
+                    style="font-size:12px; background:#f1f5f9; padding:6px 12px; border-radius:20px; font-weight:600; color:var(--text-muted);">
+                    <i class="fas fa-shield-alt"></i> Admin Mode
+                </span>
+            </div>
+        </header>
+
+        <div class="content-scroll">
+            <div class="wrap">
+                <div id="alertBox" class="alert"></div>
+
+                <div class="card">
+                    <h3 id="formTitle" style="margin-top:0; margin-bottom:16px;">Add New Role</h3>
+                    <div style="margin-bottom:20px;">
+                        <input id="roleName" placeholder="Enter Role Name (e.g. Lab Technician)">
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <label
+                            style="font-weight:600; font-size:12px; color:var(--text-muted); text-transform:uppercase; margin-bottom:10px; display:block;">Select
+                            Permissions</label>
+                        <div
+                            style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px;">
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="doctors_master"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Doctor Master</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="patient_registry"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Patient Registry</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="appointments"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Appointments</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="prescriptions"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Prescriptions</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="billing"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Billing & Invoice</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="user_management"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">User Management</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="role_master"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">Role Master</span>
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer;">
+                                <input type="checkbox" class="perm-check" value="mis_reports"
+                                    style="width:18px; height:18px; margin:0;">
+                                <span style="font-size:13px; font-weight:500;">MIS Reports</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button id="submitBtn" class="btn btn-primary" onclick="addRole()">Add Role</button>
+                        <button id="cancelBtn" class="btn" onclick="cancelEdit()"
+                            style="display:none; background:#e5e7eb; color:#374151;">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="card" style="padding:0;">
+                    <div style="padding:24px; border-bottom:1px solid var(--border);">
+                        <h3 style="margin:0; font-size:18px;">Available Roles</h3>
+                    </div>
+                    <table id="roleTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Role Name</th>
+                                <th style="text-align:right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleBody"></tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/admin/roles';
+        const ADMIN_KEY = 'my-secret-key';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Permission Check
+            try {
+                const TOKEN_KEY = 'admin_token';
+                const USER_KEY = 'admin_user';
+                if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+
+                const userStr = localStorage.getItem(USER_KEY);
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    if (user.role !== 'Super Admin') {
+                        const permissions = user.permissions || [];
+                        document.querySelectorAll('.nav-item[data-perm]').forEach(el => {
+                            const reqPerm = el.getAttribute('data-perm');
+                            if (!permissions.includes(reqPerm)) {
+                                el.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+            } catch (e) { console.error('Error applying permissions', e); }
+
+            loadRoles();
+        });
+
+        async function loadRoles() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                const tbody = document.getElementById('roleBody');
+                tbody.innerHTML = '';
+                if (data.roles) {
+                    data.roles.forEach(r => {
+                        let permLabels = '<span style="color:#9ca3af;font-size:12px; font-style:italic;">No permissions assigned</span>';
+                        if (r.permissions) {
+                            try {
+                                const p = typeof r.permissions === 'string' ? JSON.parse(r.permissions) : r.permissions;
+                                if (Array.isArray(p) && p.length > 0) {
+                                    permLabels = p.map(item =>
+                                        `<span class="perm-tag">${item.replace(/_/g, ' ')}</span>`
+                                    ).join('');
+                                }
+                            } catch (e) { }
+                        }
+
+                        const tr = document.createElement('tr');
+                        // Encode role object safely for the onclick handler
+                        const roleData = encodeURIComponent(JSON.stringify(r));
+
+                        tr.innerHTML = `
+              <td style="color:#6b7280; font-weight:500;">#${r.id}</td>
+              <td>
+                <div class="role-name">${r.role_name}</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">${permLabels}</div>
+              </td>
+              <td style="text-align:right;">
+                <button class="btn-delete" style="color:var(--primary);margin-right:8px;" onclick="editRole('${roleData}')" title="Edit Role"><i class="fas fa-edit"></i></button>
+                <button class="btn-delete" onclick="deleteRole(${r.id})" title="Delete Role"><i class="fas fa-trash"></i></button>
+              </td>
+            `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        let editingRoleId = null;
+
+        function editRole(roleDataEncoded) {
+            try {
+                const role = JSON.parse(decodeURIComponent(roleDataEncoded));
+                editingRoleId = role.id;
+                document.getElementById('roleName').value = role.role_name;
+
+                // Set Header
+                document.getElementById('formTitle').innerText = 'Edit Role';
+                const btn = document.getElementById('submitBtn');
+                btn.innerText = 'Update Role';
+                // Show cancel button
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+
+                // Reset checks first
+                document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
+
+                // Populate checks
+                if (role.permissions) {
+                    let p = role.permissions;
+                    if (typeof p === 'string') p = JSON.parse(p);
+                    if (Array.isArray(p)) {
+                        p.forEach(val => {
+                            const cb = document.querySelector(`.perm-check[value="${val}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                }
+
+                // Scroll to top
+                document.querySelector('.content-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+
+            } catch (e) { console.error('Error parsing role data', e); }
+        }
+
+        function cancelEdit() {
+            editingRoleId = null;
+            document.getElementById('roleName').value = '';
+            document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
+            document.getElementById('formTitle').innerText = 'Add New Role';
+            document.getElementById('submitBtn').innerText = 'Add Role';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        async function addRole() {
+            const name = document.getElementById('roleName').value.trim();
+            if (!name) return showAlert('Please enter a role name', 'error');
+
+            const checkboxes = document.querySelectorAll('.perm-check:checked');
+            const permissions = Array.from(checkboxes).map(cb => cb.value);
+
+            try {
+                const method = editingRoleId ? 'PUT' : 'POST';
+                const url = editingRoleId ? `${API}/${editingRoleId}` : API;
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+                    body: JSON.stringify({ role_name: name, permissions: permissions })
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    showAlert(editingRoleId ? 'Role updated successfully' : 'Role added successfully');
+                    cancelEdit(); // Reset form
+                    loadRoles();
+                } else {
+                    showAlert(json.error || 'Failed to save role', 'error');
+                }
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        async function deleteRole(id) {
+            if (!confirm('Are you sure? This might affect users assigned to this role.')) return;
+            try {
+                const res = await fetch(`${API}/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-key': ADMIN_KEY }
+                });
+                if (res.ok) {
+                    loadRoles();
+                } else {
+                    showAlert('Failed to delete role', 'error');
+                }
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        function showAlert(msg, type = 'success') {
+            const el = document.getElementById('alertBox');
+            el.className = `alert ${type}`;
+            el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> <span>${msg}</span>`;
+            el.style.display = 'flex';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+
+</html>

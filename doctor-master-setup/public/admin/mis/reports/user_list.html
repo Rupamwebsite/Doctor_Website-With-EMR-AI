@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MIS - User List Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --bg-body: #f0f4f8;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --sidebar-w: 260px;
+            --header-h: 70px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar (Same as other pages) */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .nav-links {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        /* Highlight MIS active state */
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: var(--header-h);
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Table Styles */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .report-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .report-table tr:hover td {
+            background: #fdfdfd;
+        }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-back {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 10px;
+        }
+
+        .btn-back:hover {
+            background: #f1f5f9;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-input {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            min-width: 200px;
+        }
+
+        .filter-input:focus {
+            border-color: var(--primary);
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .date-input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fas fa-heartbeat"></i></div>
+            <span>RM HealthCare</span>
+        </div>
+        <div class="nav-links">
+            <a class="nav-item" href="/doctors-master.html" data-perm="doctors_master"><i class="fas fa-user-md"></i>
+                Doctor Master</a>
+            <a class="nav-item" href="/patient-registry.html" data-perm="patient_registry"><i
+                    class="fas fa-procedures"></i> Patient Registry</a>
+            <a class="nav-item" href="/admin/appointments.html" data-perm="appointments"><i
+                    class="fas fa-calendar-check"></i> Appointments</a>
+            <a class="nav-item" href="/admin/patient_prescription.html" data-perm="prescriptions"><i
+                    class="fas fa-file-prescription"></i> Patient
+                Prescriptions</a>
+            <a class="nav-item" href="/billing.html" data-perm="billing"><i class="fas fa-file-invoice-dollar"></i>
+                Billing & Invoice</a>
+            <a class="nav-item" href="/admin/User_create.html" data-perm="user_management"><i
+                    class="fas fa-user-plus"></i> User Management</a>
+            <a class="nav-item" href="/admin/role_master.html" data-perm="role_master"><i class="fas fa-user-tag"></i>
+                Role Master</a>
+            <!-- Highlight MIS as active -->
+            <a class="nav-item active" href="/admin/mis/mis.html" data-perm="mis_reports"><i
+                    class="fas fa-chart-line"></i> MIS Reports</a>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="header">
+            <div class="page-title">
+                <h2>User List Report</h2>
+                <div class="breadcrumb">
+                    <a href="/admin/mis/mis.html">MIS Reports</a> / User List
+                </div>
+            </div>
+            <div>
+                <a href="/admin/mis/mis.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                <button class="btn-export" onclick="exportTable('userTable', 'User_List_Report')">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="card">
+
+                <div class="filter-bar">
+                    <input type="text" id="searchInput" class="filter-input"
+                        placeholder="Search by Username, Name, Role..." onkeyup="applyFilters()">
+
+                    <div class="date-group">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-muted)">From:</span>
+                        <input type="date" id="dateFrom" class="date-input" onchange="applyFilters()">
+                    </div>
+                    <div class="date-group">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-muted)">To:</span>
+                        <input type="date" id="dateTo" class="date-input" onchange="applyFilters()">
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="report-table" id="userTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Mobile</th>
+                                <th>Status</th>
+                                <th>Linked Doc ID</th>
+                                <th style="display:none">Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userBody">
+                            <tr>
+                                <td colspan="7" style="text-align:center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        const ADMIN_KEY = 'my-secret-key';
+        let allUsers = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Permission Check
+            try {
+                const TOKEN_KEY = 'admin_token';
+                const USER_KEY = 'admin_user';
+                if (!localStorage.getItem(TOKEN_KEY)) location.href = '/login.html';
+
+                const userStr = localStorage.getItem(USER_KEY);
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    if (user.role !== 'Super Admin') {
+                        const permissions = user.permissions || [];
+                        document.querySelectorAll('.nav-item[data-perm]').forEach(el => {
+                            const reqPerm = el.getAttribute('data-perm');
+                            if (!permissions.includes(reqPerm)) {
+                                el.style.display = 'none';
+                            }
+                        });
+                        if (!permissions.includes('mis_reports')) {
+                            alert('Access Denied');
+                            location.href = '/doctors-master.html';
+                        }
+                    }
+                }
+            } catch (e) { console.error('Error applying permissions', e); }
+
+            // Initial Load
+            loadUsers();
+        });
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(API + '/admin/users', {
+                    headers: { 'x-admin-key': ADMIN_KEY }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('userBody');
+                allUsers = data.users || [];
+
+                if (allUsers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">No records found</td></tr>';
+                    return;
+                }
+                renderTable(allUsers);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('userBody').innerHTML = '<tr><td colspan="7" style="color:red;text-align:center">Error loading data</td></tr>';
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('userBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">No matching records found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.username}</td>
+                    <td>${u.full_name || '-'}</td>
+                    <td>${u.role}</td>
+                    <td>${u.mobile || '-'}</td>
+                    <td>${u.status === 1 ? '<span style="color:green">Active</span>' : '<span style="color:red">Inactive</span>'}</td>
+                    <td>${u.doctor_id || '-'}</td>
+                    <td style="display:none">${u.created_at || ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const filtered = allUsers.filter(u => {
+                // Search Filter
+                const text = `${u.username} ${u.full_name} ${u.role} ${u.mobile}`.toLowerCase();
+                const matchesSearch = text.includes(search);
+
+                // Date Filter
+                let matchesDate = true;
+                if (u.created_at) {
+                    const rowDate = new Date(u.created_at).toISOString().split('T')[0];
+                    if (dateFrom && rowDate < dateFrom) matchesDate = false;
+                    if (dateTo && rowDate > dateTo) matchesDate = false;
+                } else {
+                    if (dateFrom || dateTo) matchesDate = false;
+                }
+
+                return matchesSearch && matchesDate;
+            });
+
+            renderTable(filtered);
+        }
+
+        function exportTable(tableId, filename) {
+            const table = document.getElementById(tableId);
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+            XLSX.writeFile(wb, filename + "_" + new Date().toISOString().slice(0, 10) + ".xlsx");
+        }
+    </script>
+</body>
+
+</html>

@@ -1,203 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - RM HealthCare</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Hospital Portal Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --brand: #2563eb;
-            --brand-dark: #1e40af;
-            --border: #e5e7eb;
-            --bg: #f9fafb;
-            --text-ink: #111827;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-gradient: #f9fafb;
+            /* Simple clean background */
+            --glass-bg: #ffffff;
+            --text-main: #111827;
             --text-muted: #6b7280;
-            --danger: #ef4444;
-            --radius: 8px;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --radius: 24px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-            background: linear-gradient(135deg, var(--bg) 0%, #f0f6ff 100%);
-            display: grid;
-            place-items: center;
-            min-height: 90vh;
-            color: var(--text-muted);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-gradient);
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            color: var(--text-main);
         }
-        .login-wrapper {
+
+        .wrap {
             width: 100%;
             max-width: 400px;
         }
-        .login-card {
-            background: #ffffff;
-            border: 1px solid var(--border);
+
+        .card {
+            background: var(--glass-bg);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 32px 40px;
+            padding: 48px;
+            width: 100%;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        .logo-header {
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 28px;
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--brand);
-            color: #fff;
-            font-size: 24px;
-            font-weight: 700;
+
+        h2 {
+            font-size: 18px;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 32px;
         }
-        .logo-header h2 {
-            margin: 12px 0 0;
-            color: var(--text-ink);
-            font-size: 24px;
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 14px;
         }
-        .logo-header p {
-            margin: 4px 0 0;
-            font-size: 15px;
-        }
-        
-        .input-group {
+
+        .field {
             position: relative;
             margin-bottom: 20px;
         }
-        .input-group svg {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            color: #9ca3af;
-        }
+
         input {
             width: 100%;
-            padding: 12px 14px 12px 45px; /* Icon এর জন্য বাম দিকে প্যাডিং */
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            font-size: 16px;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            background: #fdfdfd;
+            font-size: 15px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            color: var(--text-main);
         }
+
         input:focus {
-            border-color: var(--brand);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
         }
-        
+
+        .showpw {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: 0;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .showpw:hover {
+            color: var(--primary);
+        }
+
         .btn {
             width: 100%;
-            background: var(--brand);
+            padding: 14px;
+            border-radius: 12px;
+            background: var(--primary);
             color: #fff;
             border: 0;
-            padding: 12px;
-            font-size: 16px;
             font-weight: 600;
-            border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background-color 0.2s;
+            transition: background 0.2s;
+            margin-top: 10px;
         }
+
         .btn:hover {
-            background: var(--brand-dark);
+            background: var(--primary-hover);
         }
-        .btn .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: none; 
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
         }
-        .btn.loading .btn-text { display: none; }
-        .btn.loading .spinner { display: block; }
-        .btn.loading { cursor: not-allowed; background: var(--brand-dark); }
-        
-        #error-msg {
-            color: var(--danger);
+
+        .link {
+            background: none;
+            border: 0;
+            color: var(--primary);
+            cursor: pointer;
             font-size: 14px;
-            text-align: center;
-            margin-top: 15px;
-            display: none; 
-            background: #fffbeb;
-            padding: 10px;
-            border-radius: 6px;
+            font-weight: 600;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .msg {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            display: none;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .switch {
+            display: flex;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 14px;
+            margin-bottom: 32px;
+        }
+
+        .switch button {
+            flex: 1;
+            background: none;
+            border: 0;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .switch .active {
+            background: #fff;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
+
 <body>
-    <div class="login-wrapper">
-        <div class="login-card">
-            <div class="logo-header">
-                <div class="logo">R</div>
-                <h2>RM HealthCare</h2>
-                <p>Admin Portal</p>
+    <div class="wrap">
+        <div class="card" id="container">
+            <div class="brand">Hospital Portal</div>
+            <h2>Login to your account</h2>
+
+            <!-- Switch -->
+            <div class="switch" role="tablist">
+                <button id="tabLogin" class="active" role="tab" aria-selected="true">Sign In</button>
+                <button id="tabChange" role="tab" aria-selected="false">Change Password</button>
             </div>
 
-                <form id="loginForm">
-                <div id="adminArea">
-                    <div class="input-group">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
-                        <input type="password" id="adminKey" placeholder="Enter Admin Key">
+            <!-- LOGIN FORM -->
+            <form id="loginForm" autocomplete="on">
+                <div class="field">
+                    <label for="userid">User ID / Username</label>
+                    <input id="userid" name="userid" type="text" placeholder="Enter your ID" required />
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <div style="position:relative">
+                        <input id="password" name="password" type="password" placeholder="••••••••" required
+                            minlength="6" />
+                        <button type="button" class="showpw" data-target="password">Show</button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn" id="loginButton">
-                    <span class="btn-text">Login Securely</span>
-                    <div class="spinner"></div>
-                </button>
-                
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-                    <p id="error-msg" style="margin:0;"></p>
-                    <a href="#" id="forgotLink" style="font-size:13px;color:var(--brand);text-decoration:none;display:none;">Forgot / Change password</a>
+                <div class="actions">
+                    <label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:400;cursor:pointer">
+                        <input id="remember" type="checkbox" style="width:auto;margin:0" />
+                        <span style="font-size:14px">Remember me</span>
+                    </label>
+                    <button type="button" class="link" id="openChange">Forgot Password?</button>
                 </div>
-                
+
+                <button class="btn" type="submit">Sign In</button>
+                <div id="loginMsg" class="msg" role="status"></div>
             </form>
 
-            <!-- Forgot Password Modal -->
-            <div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center">
-                <div style="background:#fff;padding:20px;border-radius:10px;max-width:420px;margin:0 auto;">
-                    <h3 style="margin-top:0">Forgot Password</h3>
-                    <p style="color:var(--text-muted);font-size:14px">Enter your doctor username. You can either provide your old password to change it, or use a token method.</p>
-                    <input id="forgotUsername" placeholder="username" style="width:100%;padding:10px;margin-top:8px;margin-bottom:12px;border-radius:6px;border:1px solid var(--border)">
-                    <div style="display:flex;gap:8px;justify-content:flex-end">
-                        <button class="btn btn-outline" onclick="document.getElementById('forgotModal').style.display='none'">Cancel</button>
-                        <button class="btn btn-primary" id="forgotSendBtn">Send Token</button>
-                    </div>
-                    <p id="forgotResp" style="font-size:13px;color:var(--text-muted);margin-top:12px"></p>
-
-                    <hr style="margin:14px 0">
-                    <h4 style="margin:8px 0">Change / Reset Password</h4>
-                    <p style="color:var(--text-muted);font-size:13px;margin-top:0">Provide either your <b>old password</b> to change it immediately, or a <b>token</b> (if you requested one).</p>
-                    <input id="forgotOldPassword" type="password" placeholder="Old password (if you know it)" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
-                    <input id="forgotTokenInput" placeholder="token (if using token reset)" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
-                    <input id="forgotNewPassword" type="password" placeholder="New password" style="width:100%;padding:10px;margin-top:8px;margin-bottom:8px;border-radius:6px;border:1px solid var(--border)">
-                    <input id="forgotNewPasswordConfirm" type="password" placeholder="Confirm new password" style="width:100%;padding:10px;margin-top:8px;margin-bottom:12px;border-radius:6px;border:1px solid var(--border)">
-                    <div style="display:flex;gap:8px;justify-content:flex-end">
-                        <button class="btn btn-outline" onclick="document.getElementById('forgotTokenInput').value=''; document.getElementById('forgotNewPassword').value='';">Clear</button>
-                        <button class="btn btn-primary" id="forgotResetBtn">Reset Password</button>
-                    </div>
-                    <p id="forgotResetResp" style="font-size:13px;color:var(--text-muted);margin-top:12px"></p>
+            <!-- CHANGE PASSWORD FORM -->
+            <form id="changeForm" style="display:none;" autocomplete="on">
+                <div class="field">
+                    <label for="c_userid">User ID</label>
+                    <input id="c_userid" name="c_userid" type="text" placeholder="Enter your ID" required />
                 </div>
-            </div>
+
+                <div class="field">
+                    <label for="oldpwd">Current Password</label>
+                    <div style="position:relative">
+                        <input id="oldpwd" name="oldpwd" type="password" placeholder="••••••••" required />
+                        <button type="button" class="showpw" data-target="oldpwd">Show</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="newpwd">New Password</label>
+                    <div style="position:relative">
+                        <input id="newpwd" name="newpwd" type="password" placeholder="Min 6 characters" required
+                            minlength="6" />
+                        <button type="button" class="showpw" data-target="newpwd">Show</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="confpwd">Confirm New Password</label>
+                    <div style="position:relative">
+                        <input id="confpwd" name="confpwd" type="password" placeholder="Repeat new password" required
+                            minlength="6" />
+                        <button type="button" class="showpw" data-target="confpwd">Show</button>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:24px">
+                    <button type="button" class="btn" id="backToLogin"
+                        style="background:#e5e7eb;color:#374151;flex:1">Cancel</button>
+                    <button class="btn" type="submit" style="flex:2;margin-top:0">Update Password</button>
+                </div>
+
+                <div id="changeMsg" class="msg" role="status"></div>
             </form>
         </div>
     </div>
 
-    <script src="./login-gate.js"></script>
+    <!-- SCRIPTS (Logic Unchanged) -->
+    <script>
+        const tabLogin = document.getElementById('tabLogin');
+        const tabChange = document.getElementById('tabChange');
+        const loginForm = document.getElementById('loginForm');
+        const changeForm = document.getElementById('changeForm');
+        const openChange = document.getElementById('openChange');
+        const backToLogin = document.getElementById('backToLogin');
+
+        function showTab(tab) {
+            if (tab === 'login') {
+                loginForm.style.display = 'block'; changeForm.style.display = 'none';
+                tabLogin.classList.add('active'); tabChange.classList.remove('active');
+                tabLogin.setAttribute('aria-selected', 'true'); tabChange.setAttribute('aria-selected', 'false');
+            } else {
+                loginForm.style.display = 'none'; changeForm.style.display = 'block';
+                tabLogin.classList.remove('active'); tabChange.classList.add('active');
+                tabLogin.setAttribute('aria-selected', 'false'); tabChange.setAttribute('aria-selected', 'true');
+            }
+        }
+
+        tabLogin.addEventListener('click', () => showTab('login'));
+        tabChange.addEventListener('click', () => showTab('change'));
+        openChange.addEventListener('click', () => showTab('change'));
+        backToLogin.addEventListener('click', () => showTab('login'));
+
+        document.querySelectorAll('.showpw').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.target);
+                if (!target) return;
+                if (target.type === 'password') { target.type = 'text'; btn.innerText = 'Hide'; }
+                else { target.type = 'password'; btn.innerText = 'Show'; }
+            });
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('loginMsg'); msg.style.display = 'none';
+            const userid = document.getElementById('userid').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!userid || !password) {
+                msg.className = 'msg error';
+                msg.innerText = 'Please provide both User ID and Password';
+                msg.style.display = 'block';
+                return;
+            }
+
+            // 1. Check Local Storage
+            try {
+                const localUsers = JSON.parse(localStorage.getItem('rm_users_v1') || '[]');
+                const found = localUsers.find(u => u.username === userid && u.password === password);
+                if (found) {
+                    if (found.status === 0) { msg.className = 'msg error'; msg.innerText = 'Account is inactive'; msg.style.display = 'block'; return; }
+                    const docInfo = { id: found._id, name: found.fullname || found.username, username: found.username, category: found.category };
+                    sessionStorage.setItem('doctor_token', 'local_token_' + Date.now());
+                    sessionStorage.setItem('doctor_info', JSON.stringify(docInfo));
+                    msg.className = 'msg success'; msg.innerText = 'Login successful...'; msg.style.display = 'block';
+                    setTimeout(() => { location.href = '/doctor_dashboard/doctor_dashboard.html'; }, 700);
+                    return;
+                }
+            } catch (err) { console.error('Local login check failed', err); }
+
+            // 2. Fallback to Server API
+            try {
+                const res = await fetch('/api/doctors/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userid, password }) });
+                const json = await res.json();
+                if (res.ok) {
+                    if (json.token) {
+                        sessionStorage.setItem('doctor_token', json.token); // For Doctor Dashboard
+                    }
+                    if (json.doctor) {
+                        sessionStorage.setItem('doctor_info', JSON.stringify(json.doctor));
+                    }
+
+                    msg.className = 'msg success';
+                    msg.innerText = 'Access Granted. Redirecting...';
+                    msg.style.display = 'block';
+
+                    const role = (json.doctor && json.doctor.role) ? json.doctor.role.toLowerCase() : 'doctor';
+
+                    // ADMIN/STAFF: Store token in localStorage for Admin Panel
+                    if (role !== 'doctor' && !role.includes('doctor')) {
+                        localStorage.setItem('admin_token', json.token || 'server_token_' + Date.now());
+                        localStorage.setItem('admin_user', JSON.stringify(json.doctor));
+                    }
+
+                    setTimeout(() => {
+                        if (role === 'doctor' || role.includes('doctor')) {
+                            location.href = '/doctor_dashboard/doctor_dashboard.html';
+                        } else {
+                            location.href = '/doctors-master.html';
+                        }
+                    }, 800);
+                }
+                else {
+                    msg.className = 'msg error';
+                    msg.innerText = json.error || json.message || 'Invalid User ID or Password';
+                    msg.style.display = 'block';
+                }
+            } catch (err) {
+                msg.className = 'msg error';
+                msg.innerText = 'Unable to connect to server';
+                msg.style.display = 'block';
+            }
+        });
+
+        changeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('changeMsg'); msg.style.display = 'none';
+            const userid = document.getElementById('c_userid').value.trim();
+            const oldpwd = document.getElementById('oldpwd').value;
+            const newpwd = document.getElementById('newpwd').value;
+            const confpwd = document.getElementById('confpwd').value;
+
+            if (!userid) { msg.className = 'msg error'; msg.innerText = 'User ID is required'; msg.style.display = 'block'; return; }
+            if (newpwd.length < 6) { msg.className = 'msg error'; msg.innerText = 'New password too short (min 6 chars)'; msg.style.display = 'block'; return; }
+            if (newpwd !== confpwd) { msg.className = 'msg error'; msg.innerText = 'Passwords do not match'; msg.style.display = 'block'; return; }
+            if (newpwd === oldpwd) { msg.className = 'msg error'; msg.innerText = 'New password must be different'; msg.style.display = 'block'; return; }
+
+            try {
+                const res = await fetch('/api/doctors/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userid, old_password: oldpwd, new_password: newpwd }) });
+                const json = await res.json();
+                if (res.ok) {
+                    msg.className = 'msg success';
+                    msg.innerText = 'Password updated. Please sign in.';
+                    msg.style.display = 'block';
+                    setTimeout(() => { showTab('login'); changeForm.reset(); }, 1500);
+                }
+                else { msg.className = 'msg error'; msg.innerText = json.error || json.message || 'Update failed'; msg.style.display = 'block'; }
+            } catch (err) { msg.className = 'msg error'; msg.innerText = 'Connection error'; msg.style.display = 'block'; }
+        });
+
+        showTab('login');
+    </script>
 </body>
+
 </html>

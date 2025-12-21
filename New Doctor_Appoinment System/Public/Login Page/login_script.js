@@ -33,17 +33,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners for switching between forms
     loginToggle.addEventListener('click', showLoginForm);
     registerToggle.addEventListener('click', showRegisterForm);
-    registerLink.addEventListener('click', function(e) {
+    registerLink.addEventListener('click', function (e) {
         e.preventDefault();
         showRegisterForm();
     });
-    loginLink.addEventListener('click', function(e) {
+    loginLink.addEventListener('click', function (e) {
         e.preventDefault();
         showLoginForm();
     });
 
+
     // --- Login Form Submission ---
-    document.getElementById('login-form').addEventListener('submit', async function(e) {
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const email = document.getElementById('login-email').value;
@@ -89,18 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Registration Form Submission ---
-    document.getElementById('register-form').addEventListener('submit', async function(e) {
+    document.getElementById('register-form').addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const name = document.getElementById('register-name').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
         const confirm = document.getElementById('register-confirm').value;
-        const dob = document.getElementById('register-dob').value;
+
         const terms = document.getElementById('terms').checked;
 
         // Validation for all fields
-        if (!name || !email || !password || !confirm || !dob) {
+        if (!name || !email || !password || !confirm) {
             alert('Please fill in all fields.');
             return;
         }
@@ -134,8 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     full_name: name,
                     email: email,
-                    password: password,
-                    date_of_birth: dob
+                    password: password
                 })
             });
 
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             // Display the message from the backend
-            alert(data.message);
+            alert(data.message || data.error || 'Operation completed');
 
             if (data.success) {
                 // If registration is successful, switch to the login form

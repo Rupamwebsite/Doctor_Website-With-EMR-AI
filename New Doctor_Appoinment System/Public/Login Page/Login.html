@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RM HealthCare - HealthCare Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./login_style.css">
-    
+
 </head>
+
 <body>
-    
+
     <!-- Animated Background -->
     <div class="background-slider">
         <div class="slide"></div>
@@ -18,33 +20,33 @@
         <div class="slide"></div>
     </div>
     <div class="background-overlay"></div>
-    
+
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-heartbeat"></i> RM HealthCare</h1>
             <p>Access your healthcare account</p>
         </div>
-        
+
         <div class="form-toggle">
             <div class="toggle-btn active" id="login-toggle">Login</div>
             <div class="toggle-btn" id="register-toggle">Register</div>
         </div>
-        
+
         <div class="form-container">
             <!-- Login Form -->
-            <form class="form active" id="login-form"action="/login" method="post">
+            <form class="form active" id="login-form" action="/login" method="post">
                 <div class="form-group">
                     <label for="login-email">Email Address</label>
                     <input type="email" id="login-email" placeholder="Enter your email" required>
                     <i class="fas fa-envelope"></i>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="login-password">Password</label>
                     <input type="password" id="login-password" placeholder="Enter your password" required>
                     <i class="fas fa-lock"></i>
                 </div>
-                
+
                 <div class="remember-forgot">
                     <div class="remember">
                         <input type="checkbox" id="remember">
@@ -52,11 +54,11 @@
                     </div>
                     <a href="./forget.html" class="forgot">Forgot password?</a>
                 </div>
-                
+
                 <button type="submit" class="btn">Login</button>
-                
+
                 <div class="separator">or continue with</div>
-                
+
                 <div class="social-login">
                     <div class="social-btn">
                         <i class="fab fa-google"></i>
@@ -68,51 +70,46 @@
                         <i class="fab fa-linkedin-in"></i>
                     </div>
                 </div>
-                
+
                 <div class="register-link">
                     Don't have an account? <a href="#" id="register-link">Register now</a>
                 </div>
             </form>
-            
+
             <!-- Registration Form -->
             <form class="form" id="register-form" action="/register" method="post">
-                <div class="form-group">  
+                <div class="form-group">
                     <label for="register-name">Full Name</label>
                     <input type="text" id="register-name" placeholder="Enter your full name" required>
                     <i class="fas fa-user"></i>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="register-email">Email Address</label>
                     <input type="email" id="register-email" placeholder="Enter your email" required>
                     <i class="fas fa-envelope"></i>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="register-password">Password</label>
                     <input type="password" id="register-password" placeholder="Create a password" required>
                     <i class="fas fa-lock"></i>
                     <div class="password-rules">Must be at least 8 characters with a number and symbol</div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="register-confirm">Confirm Password</label>
                     <input type="password" id="register-confirm" placeholder="Confirm your password" required>
                     <i class="fas fa-lock"></i>
                 </div>
-                
-                <div class="form-group">
-                    <label for="register-dob">Date of Birth</label>
-                    <input type="date" id="register-dob" required>
-                </div>
-                
+
                 <div class="remember">
                     <input type="checkbox" id="terms" required>
                     <label for="terms">I agree to the <a href="#" class="forgot">Terms & Conditions</a></label>
                 </div>
-                
+
                 <button type="submit" class="btn">Create Account</button>
-                
+
                 <div class="register-link">
                     Already have an account? <a href="#" id="login-link">Login here</a>
                 </div>
@@ -120,6 +117,7 @@
         </div>
     </div>
 
-<script src="./login_script.js"></script>
+    <script src="./login_script.js"></script>
 </body>
+
 </html>

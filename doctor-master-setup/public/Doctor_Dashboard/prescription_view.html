@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prescription</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            /* Deep Royal Blue */
+            --accent: #2563eb;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --bg-page: #ffffff;
+            --bg-body: #f1f5f9;
+        }
+
+        body {
+            background: var(--bg-body);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            margin: 0;
+            color: var(--text-dark);
+        }
+
+        .page {
+            background: var(--bg-page);
+            width: 210mm;
+            min-height: 297mm;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+            border-radius: 2px;
+            overflow: hidden;
+            /* For watermark */
+        }
+
+        /* WATERMARK */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-family: 'Playfair Display', serif;
+            font-size: 150px;
+            color: rgba(30, 58, 138, 0.03);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 0;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .page {
+                width: 100%;
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* HEADER */
+        .header {
+            position: relative;
+            padding: 40px 50px 20px 50px;
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            z-index: 1;
+        }
+
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: var(--primary);
+            color: white;
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .brand-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+
+        .brand-subtitle {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-light);
+            margin-top: 6px;
+        }
+
+        /* DOCTOR INFO */
+        .doc-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 15px 50px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .doc-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .doc-qual {
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .doc-meta {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        .doc-contact {
+            text-align: right;
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .doc-phone {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 13px;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* PATIENT STRIP */
+        .pat-strip {
+            display: flex;
+            margin: 20px 50px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 20px;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pat-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pat-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .pat-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* CONTENT */
+        .content {
+            display: flex;
+            padding: 0 50px;
+            min-height: 600px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar {
+            width: 240px;
+            border-right: 1px dashed #cbd5e1;
+            padding-right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .main {
+            flex: 1;
+            padding-left: 35px;
+        }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #64748b;
+            /* Muted title */
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* Vitals Card */
+        .vitals-grid {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .vital-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .vital-item:last-child {
+            margin-bottom: 0;
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .vital-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .vital-val {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        /* Generic Side Box */
+        .side-box {
+            padding: 0;
+        }
+
+        .side-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        /* Diagnosis Highlight */
+        .diagnosis-box {
+            background: #eff6ff;
+            border-left: 3px solid var(--accent);
+            padding: 12px;
+            border-radius: 0 6px 6px 0;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        /* Rx Part */
+        .rx-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-style: italic;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+
+        .med-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+
+        .med-instr {
+            font-size: 12px;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 2px;
+        }
+
+        .med-meta {
+            font-size: 12px;
+            color: var(--text-dark);
+            background: #f8fafc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .advice-box {
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+            color: #451a03;
+            line-height: 1.6;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin: 40px 50px 30px 50px;
+            padding-top: 20px;
+            border-top: 2px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: relative;
+            z-index: 1;
+        }
+
+        .follow-up {
+            font-size: 12px;
+            color: var(--text-dark);
+            background: #f0f9ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e0f2fe;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .sign-area {
+            width: 180px;
+            border-bottom: 1px solid var(--text-dark);
+            margin-bottom: 6px;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 99px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: white;
+            color: #0f172a;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+        <div class="watermark">RM HealthCare</div>
+
+        <div class="header">
+            <div class="brand-logo">+</div>
+            <div class="brand-title">RM HealthCare</div>
+            <div class="brand-subtitle">Excellence in Medical Care</div>
+        </div>
+
+        <div class="doc-section">
+            <div style="flex:1;">
+                <div class="doc-name" id="dName">Dr. Name</div>
+                <div class="doc-qual" id="dQual">MBBS, MD</div>
+                <div class="doc-meta" style="text-transform:uppercase; letter-spacing:0.5px;">General Physician</div>
+                <div class="doc-meta" id="dReg">Reg: -</div>
+            </div>
+            <div class="doc-contact">
+                <div>For Appointments:</div>
+                <div class="doc-phone"><i class="fa-solid fa-phone"></i> <span id="dPhone">-</span></div>
+            </div>
+        </div>
+
+        <div class="pat-strip">
+            <div class="pat-box">
+                <span class="pat-label">Patient Name</span>
+                <span class="pat-val" id="pName">-</span>
+            </div>
+            <div class="pat-box">
+                <span class="pat-label">Age / Sex</span>
+                <span class="pat-val" id="pAgeSex">-</span>
+            </div>
+            <div class="pat-box">
+                <span class="pat-label">ID / Date</span>
+                <span class="pat-val"><span id="pIdPhone">-</span> / <span id="vDate">-</span></span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="sidebar">
+                <div>
+                    <div class="section-title">Vitals</div>
+                    <div class="vitals-grid">
+                        <div class="vital-item"><span class="vital-label">BP</span> <span class="vital-val"
+                                id="vBP">-</span></div>
+                        <div class="vital-item"><span class="vital-label">Pulse</span> <span class="vital-val"
+                                id="vPulse">-</span></div>
+                        <div class="vital-item"><span class="vital-label">Temp</span> <span class="vital-val"
+                                id="vTemp">-</span></div>
+                        <div class="vital-item"><span class="vital-label">SpO2</span> <span class="vital-val"
+                                id="vSpO2">-</span></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-title">Complaints</div>
+                    <div class="side-text" id="vComplaints">—</div>
+                </div>
+
+                <div>
+                    <div class="section-title">Diagnosis</div>
+                    <div class="diagnosis-box" id="vDiagnosis">—</div>
+                </div>
+
+                <div id="boxFindings" class="hidden">
+                    <div class="section-title">Findings</div>
+                    <div class="side-text"
+                        style="background:#fff7ed; padding:10px; border-radius:6px; border:1px solid #ffedd5; color:#9a3412;"
+                        id="vFindings"></div>
+                </div>
+            </div>
+
+            <div class="main">
+                <div class="rx-logo">Rx</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="45%">Medicine</th>
+                            <th width="15%">Dose</th>
+                            <th width="20%">Frequency</th>
+                            <th width="20%">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medList">
+                        <!-- JS Populates -->
+                    </tbody>
+                </table>
+
+                <div id="boxTests" class="hidden" style="margin-bottom:20px;">
+                    <div class="section-title" style="color:#0f172a; border:none; margin-bottom:5px;">Investigations
+                    </div>
+                    <div class="side-text" style="background:#f8fafc; padding:10px; border-radius:4px;" id="vTests">
+                    </div>
+                </div>
+
+                <div id="adviceSection" class="hidden">
+                    <div class="advice-box">
+                        <strong
+                            style="text-transform:uppercase; font-size:11px; color:#b45309; display:block; margin-bottom:5px;">Advice</strong>
+                        <div id="vAdvice"></div>
+                        <div id="vNote" style="margin-top:8px; font-style:italic; color:#78350f;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div id="followSection" class="hidden follow-up">
+                <i class="fa-solid fa-calendar-check" style="margin-right:5px;"></i> Next Follow Up: <strong
+                    id="vFollow"></strong>
+            </div>
+            <div class="signature">
+                <div class="sign-area"></div>
+                <strong style="font-size:14px;" id="dSign">Dr. Name</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls no-print">
+        <button class="btn secondary" onclick="window.close()">Close</button>
+        <button class="btn" onclick="window.print()">Print</button>
+    </div>
+
+    <script>
+        try {
+            const raw = sessionStorage.getItem('print_prescription_data');
+            if (raw) {
+                const data = JSON.parse(raw);
+                const doc = data.doctor || {};
+                const pat = data.patient || {};
+                const vis = data.visit || {};
+                const vit = vis.vitals || {};
+
+                // Doctor
+                document.getElementById('dName').innerText = "Dr. " + (doc.name || 'Doctor').replace('Dr. ', '');
+
+                let quals = [doc.degrees, doc.specialization].filter(Boolean).join(', ');
+                document.getElementById('dQual').innerText = quals || 'General Physician';
+
+                let regs = [];
+                if (doc.reg_number) regs.push("Reg: " + doc.reg_number);
+                if (doc.department) regs.push(doc.department);
+                document.getElementById('dReg').innerText = regs.join(' | ');
+
+                document.getElementById('dPhone').innerText = doc.phone || '9000000000'; // Fallback logic
+                document.getElementById('dSign').innerText = "Dr. " + (doc.name || 'Doctor').replace('Dr. ', '');
+
+                // Patient
+                document.getElementById('pName').innerText = pat.name || '-';
+                document.getElementById('pAgeSex').innerText = `${pat.age || '-'} / ${pat.sex || '-'}`;
+                document.getElementById('pIdPhone').innerText = `${pat.pat_num || '-'}`;
+                document.getElementById('vDate').innerText = vis.date ? vis.date.split('T')[0] : new Date().toLocaleDateString();
+
+                // Vitals
+                document.getElementById('vBP').innerText = vit.bp || '-';
+                document.getElementById('vPulse').innerText = vit.pulse || '-';
+                document.getElementById('vTemp').innerText = vit.temp || '-';
+                document.getElementById('vSpO2').innerText = vit.spo2 || '-';
+
+                // Clinical
+                document.getElementById('vComplaints').innerText = vis.symptoms || '—';
+                document.getElementById('vDiagnosis').innerText = vis.diagnosis || '—';
+
+                if (vis.clinical_findings) {
+                    document.getElementById('vFindings').innerText = vis.clinical_findings;
+                    document.getElementById('boxFindings').classList.remove('hidden');
+                }
+
+                if (vis.lab_tests) {
+                    document.getElementById('vTests').innerText = vis.lab_tests;
+                    document.getElementById('boxTests').classList.remove('hidden');
+                }
+
+                // Medicines
+                const tbody = document.getElementById('medList');
+                const meds = vis.medicines || [];
+                if (meds.length > 0) {
+                    meds.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td>
+                            <div class="med-name">${m.name}</div>
+                            ${m.instr ? `<div class="med-instr">${m.instr}</div>` : ''}
+                        </td>
+                        <td><span class="med-meta">${m.dose || '-'}</span></td>
+                        <td><span class="med-meta">${m.freq || '-'}</span></td>
+                        <td>${m.dur || '-'}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#94a3b8;">No medicines prescribed</td></tr>';
+                }
+
+                // Advice
+                if (vis.advice || vis.note) {
+                    document.getElementById('adviceSection').classList.remove('hidden');
+                    document.getElementById('vAdvice').innerText = vis.advice || '';
+                    if (vis.note) document.getElementById('vNote').innerText = "Note: " + vis.note;
+                }
+
+                // Follow Up
+                if (vis.follow_up_date) {
+                    document.getElementById('followSection').classList.remove('hidden');
+                    document.getElementById('vFollow').innerText = vis.follow_up_date.split('T')[0];
+                }
+
+            } else {
+                document.body.innerHTML = "<div style='padding:50px; text-align:center;'>No prescription data loaded.</div>";
+            }
+        } catch (e) {
+            console.error(e);
+            document.body.innerHTML = "<div style='padding:50px; text-align:center;'>Error loading prescription.</div>";
+        }
+    </script>
+
+</body>
+
+</html>

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Doctor Dashboard - Settings</title>
+    <title>Doctor Dashboard - Messages</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -249,35 +249,6 @@
                 display: none;
             }
         }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .btn-save {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }
     </style>
 </head>
 
@@ -288,7 +259,7 @@
                 <div class="brand-icon">
                     <i class="fa-solid fa-heart-pulse"></i>
                 </div>
-                <div class="brand-text">RM Health</div>
+                <div class="brand-text">RM HealthCare</div>
             </div>
 
             <div class="nav-section">
@@ -310,7 +281,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="messages.html">
+                        <a href="messages.html" class="active">
                             <i class="fa-regular fa-envelope"></i> Messages
                         </a>
                     </li>
@@ -320,11 +291,7 @@
             <div class="nav-section">
                 <div class="nav-label">Settings</div>
                 <ul class="nav-list">
-                    <li class="nav-item">
-                        <a href="settings.html" class="active">
-                            <i class="fa-solid fa-sliders"></i> Preferences
-                        </a>
-                    </li>
+
                     <li class="nav-item">
                         <a href="#" onclick="logout()">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
@@ -337,8 +304,8 @@
         <main class="main-content">
             <div class="topbar">
                 <div class="topbar-left">
-                    <h2>Settings</h2>
-                    <p>Profile & Preferences</p>
+                    <h2>Messages</h2>
+                    <p>Internal communication</p>
                 </div>
                 <div class="topbar-right">
                     <div class="doctor-profile">
@@ -348,27 +315,14 @@
                 </div>
             </div>
 
-            <section class="card" style="max-width: 600px;">
+            <section class="card">
                 <div class="card-header">
-                    <div class="card-title">Profile Settings</div>
+                    <div class="card-title">Inbox</div>
                 </div>
-                <div class="form-group">
-                    <label>Doctor Name</label>
-                    <input type="text" value="Dr. Rupam Mandal" readonly style="background:#f3f4f6" />
+                <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                    <i class="fa-solid fa-inbox" style="font-size: 40px; margin-bottom: 20px; color: #d1d5db;"></i>
+                    <p>No new messages.</p>
                 </div>
-                <div class="form-group">
-                    <label>Email ID</label>
-                    <input type="email" value="dr.rupam@carelink.com" readonly style="background:#f3f4f6" />
-                </div>
-                <div class="form-group">
-                    <label>Specialization</label>
-                    <input type="text" value="MBBS, MD (General Medicine)" />
-                </div>
-                <div class="form-group">
-                    <label>Clinic Address</label>
-                    <input type="text" value="CareLink Clinic, Kolkata" />
-                </div>
-                <button class="btn-save" onclick="alert('Settings saved!')">Save Changes</button>
             </section>
         </main>
     </div>

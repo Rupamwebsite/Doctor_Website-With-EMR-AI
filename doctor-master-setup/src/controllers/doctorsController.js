@@ -13,23 +13,25 @@ const ABS_UPLOAD_DIR = path.join(process.cwd(), UPLOAD_DIR);
 async function getDoctors(req, res) {
   try {
     const activeQuery = req.query.active;
-    
+
 
     let query = `SELECT 
         DoctorID as id, FirstName as first_name, LastName as last_name, 
         Specialization as specialization, Email as email, ContactNumber as phone, 
         ActiveStatus as is_active, Department as department, DoctorType as doctor_type, 
-        DOB as dob, image_url as image_url, Fees as fees 
-        FROM Doctors`; 
-        
+        DOB as dob, image_url as image_url, Fees as fees,
+        Degrees as degrees, RegNumber as reg_number,
+        opd_days, opd_time, daily_limit
+        FROM Doctors`;
+
     const params = [];
 
     if (activeQuery !== 'all' && (activeQuery === '1' || activeQuery === '0')) {
-        query += ' WHERE ActiveStatus = ?';
-        params.push(parseInt(activeQuery));
+      query += ' WHERE ActiveStatus = ?';
+      params.push(parseInt(activeQuery));
     }
 
-    query += ' ORDER BY CreatedOn DESC';
+    query += ' ORDER BY created_at DESC';
 
     const [rows] = await pool.query(query, params);
     res.json({ doctors: rows });
@@ -41,55 +43,60 @@ async function getDoctors(req, res) {
 
 // --- (getDoctorById) ---
 async function getDoctorById(req, res) {
-    try {
-        const id = req.params.id;
-        let query = `SELECT 
-            DoctorID as id, FirstName as first_name, LastName as last_name, 
-            Specialization as specialization, Email as email, ContactNumber as phone, 
-            ActiveStatus as is_active, Department as department, DoctorType as doctor_type, 
-            DOB as dob, image_url as image_url, Fees as fees 
-            FROM Doctors WHERE DoctorID = ?`; 
+  try {
+    const id = req.params.id;
+    let query = `SELECT 
+        DoctorID as id, FirstName as first_name, LastName as last_name, 
+        Specialization as specialization, Email as email, ContactNumber as phone, 
+        ActiveStatus as is_active, Department as department, DoctorType as doctor_type, 
+        DOB as dob, image_url as image_url, Fees as fees,
+        Degrees as degrees, RegNumber as reg_number,
+        opd_days, opd_time, daily_limit
+        FROM Doctors`;
 
-        const [rows] = await pool.query(query, [id]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
-        
-        res.json(rows[0]);
-    } catch (err) {
-        console.error("Error fetching doctor by ID:", err);
-        res.status(500).json({ error: 'Server error fetching doctor' });
-    }
+    const [rows] = await pool.query(query, [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching doctor by ID:", err);
+    res.status(500).json({ error: 'Server error fetching doctor' });
+  }
 }
 
 
 // --- (createDoctor) ---
 async function createDoctor(req, res) {
   try {
-    const { 
-      first_name, last_name, specialization, email, phone, 
-      department, doctor_type, dob, fees 
+    const {
+      first_name, last_name, specialization, email, phone,
+      department, doctor_type, dob, fees, degrees, reg_number
     } = req.body;
-    
+
     // ⭐ FIXED: req.file থেকে ছবির নাম নেওয়া হলো (Multer দ্বারা যুক্ত)
-    const image_url = req.file ? req.file.filename : null; 
-    
+    const image_url = req.file ? req.file.filename : null;
+
     // Basic validation
     if (!first_name || !specialization || !department) {
-        // যদি ডাটা না থাকে এবং ছবি আপলোড হয়ে থাকে, তাহলে সেই ফাইলটি ডিলিট করে দিন
-        if (image_url) {
-            fs.unlinkSync(path.join(ABS_UPLOAD_DIR, image_url));
-        }
-        return res.status(400).json({ error: 'First Name, Specialization, and Department are required.' });
+      // যদি ডাটা না থাকে এবং ছবি আপলোড হয়ে থাকে, তাহলে সেই ফাইলটি ডিলিট করে দিন
+      if (image_url) {
+        fs.unlinkSync(path.join(ABS_UPLOAD_DIR, image_url));
+      }
+      return res.status(400).json({ error: 'First Name, Specialization, and Department are required.' });
     }
+
+    // Audit Trail: Get creator
+    const createdBy = req.headers['x-admin-user'] || 'System';
 
     const query = `
       INSERT INTO Doctors 
-      (FirstName, LastName, Specialization, Email, ContactNumber, Department, DoctorType, DOB, Fees, image_url, ActiveStatus, CreatedOn) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
+      (FirstName, LastName, Specialization, Email, ContactNumber, Department, DoctorType, DOB, Fees, image_url, ActiveStatus, created_at, Degrees, RegNumber, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, ?)
     `;
 
     const params = [
-      first_name, last_name, specialization, email, phone, 
-      department, doctor_type, dob, fees, image_url 
+      first_name, last_name, specialization, email, phone,
+      department, doctor_type, dob, fees, image_url, degrees, reg_number, createdBy
     ];
 
     const [result] = await pool.query(query, params);
@@ -97,9 +104,9 @@ async function createDoctor(req, res) {
   } catch (err) {
     // Error হলে ফাইল ডিলিট করার চেষ্টা করুন
     if (req.file && req.file.filename) {
-        try {
-            fs.unlinkSync(path.join(ABS_UPLOAD_DIR, req.file.filename));
-        } catch(e) { /* ignore unlink error */ }
+      try {
+        fs.unlinkSync(path.join(ABS_UPLOAD_DIR, req.file.filename));
+      } catch (e) { /* ignore unlink error */ }
     }
     console.error('Error creating doctor:', err);
     res.status(500).json({ error: 'Server error while creating doctor' });
@@ -110,22 +117,28 @@ async function createDoctor(req, res) {
 async function updateDoctor(req, res) {
   try {
     const id = req.params.id;
-    const { 
-      first_name, last_name, specialization, email, phone, 
-      department, doctor_type, dob, fees, old_image_url
+    const {
+      first_name, last_name, specialization, email, phone,
+      department, doctor_type, dob, fees, old_image_url,
+      degrees, reg_number
     } = req.body;
-    
+
     // ⭐ FIXED: req.file থেকে নতুন ছবির নাম নেওয়া হলো
     const new_image_url = req.file ? req.file.filename : null;
+
+    // Audit Trail: Get updater
+    const updatedBy = req.headers['x-admin-user'] || 'System';
 
     let updateQuery = `
       UPDATE Doctors SET 
       FirstName = ?, LastName = ?, Specialization = ?, Email = ?, ContactNumber = ?, 
-      Department = ?, DoctorType = ?, DOB = ?, Fees = ?
+      Department = ?, DoctorType = ?, DOB = ?, Fees = ?, Degrees = ?, RegNumber = ?,
+      updated_by = ?
     `;
     let updateParams = [
-      first_name, last_name, specialization, email, phone, 
-      department, doctor_type, dob, fees
+      first_name, last_name, specialization, email, phone,
+      department, doctor_type, dob, fees, degrees, reg_number,
+      updatedBy
     ];
 
     // যদি নতুন ছবি আপলোড হয়, তবে image_url আপডেট করুন
@@ -136,34 +149,34 @@ async function updateDoctor(req, res) {
 
     updateQuery += ` WHERE DoctorID = ?`;
     updateParams.push(id);
-    
+
     const [result] = await pool.query(updateQuery, updateParams);
 
     if (result.affectedRows === 0) {
-        // যদি আপডেট না হয় কিন্তু নতুন ফাইল আপলোড হয়ে থাকে, তাহলে ফাইলটি ডিলিট করে দিন
-        if (new_image_url) {
-            fs.unlinkSync(path.join(ABS_UPLOAD_DIR, new_image_url));
-        }
-        return res.status(404).json({ error: 'Doctor not found or no changes made' });
+      // যদি আপডেট না হয় কিন্তু নতুন ফাইল আপলোড হয়ে থাকে, তাহলে ফাইলটি ডিলিট করে দিন
+      if (new_image_url) {
+        fs.unlinkSync(path.join(ABS_UPLOAD_DIR, new_image_url));
+      }
+      return res.status(404).json({ error: 'Doctor not found or no changes made' });
     }
-    
+
     // ⭐ FIXED: পুরাতন ছবি ডিলিট করার লজিক ⭐
     // যদি নতুন ছবি আপলোড হয় এবং পুরাতন image_url থাকে
     if (new_image_url && old_image_url && old_image_url !== new_image_url) {
-        const file_to_delete = path.join(ABS_UPLOAD_DIR, old_image_url);
-        // নিশ্চিত করুন ফাইলটি বিদ্যমান
-        if (fs.existsSync(file_to_delete)) {
-            fs.unlinkSync(file_to_delete);
-        }
+      const file_to_delete = path.join(ABS_UPLOAD_DIR, old_image_url);
+      // নিশ্চিত করুন ফাইলটি বিদ্যমান
+      if (fs.existsSync(file_to_delete)) {
+        fs.unlinkSync(file_to_delete);
+      }
     }
-    
+
     res.json({ id: id, message: 'Doctor updated successfully' });
   } catch (err) {
     // Error হলে নতুন আপলোড করা ফাইলটি ডিলিট করার চেষ্টা করুন
     if (req.file && req.file.filename) {
-        try {
-            fs.unlinkSync(path.join(ABS_UPLOAD_DIR, req.file.filename));
-        } catch(e) { /* ignore unlink error */ }
+      try {
+        fs.unlinkSync(path.join(ABS_UPLOAD_DIR, req.file.filename));
+      } catch (e) { /* ignore unlink error */ }
     }
     console.error('Error updating doctor:', err);
     res.status(500).json({ error: 'Server error while updating doctor' });
@@ -175,12 +188,12 @@ async function updateDoctorStatus(req, res) {
   try {
     const id = req.params.id;
     const { is_active } = req.body;
-    
+
     // is_active (boolean) কে MySQL এর জন্য 1 বা 0 এ রূপান্তর করা হলো
     const val = is_active === true || is_active === '1' ? 1 : 0;
-    
+
     await pool.query('UPDATE Doctors SET ActiveStatus = ? WHERE DoctorID = ?', [val, id]);
-    
+
     const [rows] = await pool.query('SELECT DoctorID as id, ActiveStatus as is_active FROM Doctors WHERE DoctorID = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
     res.json({ id: rows[0].id, is_active: rows[0].is_active });
@@ -194,27 +207,27 @@ async function updateDoctorStatus(req, res) {
 async function deleteDoctor(req, res) {
   try {
     const id = req.params.id;
-    
+
     // image_url fetch করে ফাইলটি ডিলিট করার জন্য
     const [rows] = await pool.query('SELECT image_url FROM Doctors WHERE DoctorID = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Doctor not found' });
-    
+
     const image_to_delete = rows[0].image_url;
 
     const [result] = await pool.query('DELETE FROM Doctors WHERE DoctorID = ?', [id]);
-    
+
     // ⭐ FIXED: ফাইলটি সার্ভার থেকে ডিলিট করা হলো ⭐
     if (result.affectedRows > 0 && image_to_delete) {
-        const full_path = path.join(ABS_UPLOAD_DIR, image_to_delete);
-        if (fs.existsSync(full_path)) {
-            fs.unlinkSync(full_path);
-        }
+      const full_path = path.join(ABS_UPLOAD_DIR, image_to_delete);
+      if (fs.existsSync(full_path)) {
+        fs.unlinkSync(full_path);
+      }
     }
-    
+
     if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Doctor not found' });
+      return res.status(404).json({ error: 'Doctor not found' });
     }
-    
+
     res.json({ message: 'Doctor deleted successfully', id: id });
   } catch (err) {
     console.error(err);

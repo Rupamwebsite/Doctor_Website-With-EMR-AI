@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prescription</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .page {
+                width: 100%;
+                box-shadow: none;
+                padding: 20px;
+                height: auto;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .doctor-info h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+
+        .doctor-info p {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .clinic-info {
+            text-align: right;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .clinic-info strong {
+            display: block;
+            font-size: 16px;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        /* Patient Info Bar */
+        .patient-info {
+            display: flex;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .p-group label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .p-group span {
+            font-size: 15px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* Left/Right Layout */
+        .container {
+            display: flex;
+            gap: 30px;
+        }
+
+        .sidebar {
+            width: 28%;
+            border-right: 1px solid #e2e8f0;
+            padding-right: 20px;
+        }
+
+        .main {
+            width: 72%;
+        }
+
+        /* Sidebar Items */
+        .side-box {
+            margin-bottom: 25px;
+        }
+
+        .side-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #0f172a;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .vitals-grid {
+            margin-top: 8px;
+        }
+
+        .vital-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .vital-row span:first-child {
+            color: #64748b;
+        }
+
+        .side-content {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        /* Main Content */
+        .rx-header {
+            font-family: serif;
+            font-size: 32px;
+            font-weight: 700;
+            font-style: italic;
+            color: #0f172a;
+            margin-bottom: 15px;
+        }
+
+        .med-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .med-table thead th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .med-table tbody td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+
+        .med-name {
+            font-weight: 600;
+            color: #0f172a;
+            display: block;
+        }
+
+        .med-instr {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .med-dose {
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .adv-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .adv-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #b45309;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .adv-content {
+            font-size: 14px;
+            color: #451a03;
+        }
+
+        .note-section {
+            font-size: 13px;
+            color: #64748b;
+            border: 1px dashed #cbd5e1;
+            padding: 10px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 40px;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .sign-line {
+            width: 200px;
+            border-top: 1px solid #0f172a;
+            margin-bottom: 8px;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 99px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: white;
+            color: #0f172a;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+        <header>
+            <div class="doctor-info">
+                <h1 id="dName">Dr. Name</h1>
+                <p id="dQual">MBBS, MD (General Medicine)</p>
+                <p id="dReg" style="font-size:12px; color:#64748b;">Reg No: -</p>
+            </div>
+            <div class="clinic-info">
+                <strong>RM HealthCare</strong>
+                <div>Kolkata, West Bengal</div>
+                <div>Ph: +91 90000 00000</div>
+            </div>
+        </header>
+
+        <div class="patient-info">
+            <div class="p-group">
+                <label>Patient Name</label>
+                <span id="pName">-</span>
+            </div>
+            <div class="p-group">
+                <label>Age / Sex</label>
+                <span id="pAgeSex">-</span>
+            </div>
+            <div class="p-group">
+                <label>ID / Phone</label>
+                <span id="pIdPhone">-</span>
+            </div>
+            <div class="p-group" style="text-align:right;">
+                <label>Date</label>
+                <span id="vDate">-</span>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <div class="side-box">
+                    <div class="side-title">Vitals</div>
+                    <div class="vitals-grid">
+                        <div class="vital-row"><span>BP</span> <strong id="vBP">-</strong></div>
+                        <div class="vital-row"><span>Pulse</span> <strong id="vPulse">-</strong></div>
+                        <div class="vital-row"><span>Temp</span> <strong id="vTemp">-</strong></div>
+                        <div class="vital-row"><span>SpO2</span> <strong id="vSpO2">-</strong></div>
+                    </div>
+                </div>
+
+                <div class="side-box">
+                    <div class="side-title">Chief Complaints</div>
+                    <div class="side-content" id="vComplaints">—</div>
+                </div>
+
+                <div class="side-box">
+                    <div class="side-title">Diagnosis</div>
+                    <div class="side-content" id="vDiagnosis" style="font-weight:600; color:#0f172a;">—</div>
+                </div>
+
+                <div class="side-box" id="boxFindings">
+                    <div class="side-title">Findings</div>
+                    <div class="side-content" id="vFindings">—</div>
+                </div>
+
+                <div class="side-box" id="boxTests">
+                    <div class="side-title">Investigations</div>
+                    <div class="side-content" id="vTests">—</div>
+                </div>
+            </aside>
+
+            <!-- MAIN -->
+            <main class="main">
+                <div class="rx-header">Rx</div>
+
+                <table class="med-table">
+                    <thead>
+                        <tr>
+                            <th width="40%">Medicine / Instruction</th>
+                            <th width="20%">Dose</th>
+                            <th width="20%">Frequency</th>
+                            <th width="20%">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medList">
+                        <!-- Javascript will populate -->
+                    </tbody>
+                </table>
+
+                <div id="adviceSection" class="adv-box hidden">
+                    <div class="adv-title">Advice</div>
+                    <div class="adv-content" id="vAdvice"></div>
+                </div>
+
+                <div id="noteSection" class="note-section hidden">
+                    <strong>Note:</strong> <span id="vNote"></span>
+                </div>
+
+                <div id="followSection" style="margin-top:20px; font-weight:600; color:#0f172a;" class="hidden">
+                    Next Follow-up: <span id="vFollow" style="color:#2563eb;"></span>
+                </div>
+
+            </main>
+        </div>
+
+        <footer>
+            <div class="signature">
+                <div class="sign-line"></div>
+                <strong id="dSign">Dr. Name</strong>
+            </div>
+        </footer>
+    </div>
+
+    <div class="controls no-print">
+        <button class="btn secondary" onclick="window.close()">Close</button>
+        <button class="btn" onclick="window.print()">Print</button>
+    </div>
+
+    <script>
+        try {
+            const raw = sessionStorage.getItem('print_prescription_data');
+            if (raw) {
+                const data = JSON.parse(raw);
+                const doc = data.doctor || {};
+                const pat = data.patient || {};
+                const vis = data.visit || {};
+                const vit = vis.vitals || {};
+
+                // Doctor
+                // Doctor
+                document.getElementById('dName').innerText = "Dr. " + (doc.name || 'Doctor').replace('Dr. ', '');
+
+                // Construct Qualifications line (e.g., MBBS, MD (Medicine))
+                let quals = [doc.degrees, doc.specialization].filter(Boolean).join(', ');
+                document.getElementById('dQual').innerText = quals || 'General Physician';
+
+                // Construct Reg / Dept line
+                let sub = [];
+                if (doc.reg_number) sub.push("Reg No: " + doc.reg_number);
+                if (doc.department) sub.push(doc.department);
+                document.getElementById('dReg').innerText = sub.join(' | ');
+
+                document.getElementById('dSign').innerText = "Dr. " + (doc.name || 'Doctor').replace('Dr. ', '');
+
+                // Patient
+                document.getElementById('pName').innerText = pat.name || '-';
+                document.getElementById('pAgeSex').innerText = `${pat.age || '-'} / ${pat.sex || '-'}`;
+                document.getElementById('pIdPhone').innerText = `${pat.pat_num || '-'} (${pat.phone || ''})`;
+                document.getElementById('vDate').innerText = vis.date ? vis.date.split('T')[0] : new Date().toLocaleDateString();
+
+                // Vitals
+                document.getElementById('vBP').innerText = vit.bp || '-';
+                document.getElementById('vPulse').innerText = vit.pulse || '-';
+                document.getElementById('vTemp').innerText = vit.temp || '-';
+                document.getElementById('vSpO2').innerText = vit.spo2 || '-';
+
+                // Clinical
+                document.getElementById('vComplaints').innerText = vis.symptoms || '—';
+                document.getElementById('vDiagnosis').innerText = vis.diagnosis || '—';
+
+                if (vis.clinical_findings) document.getElementById('vFindings').innerText = vis.clinical_findings;
+                else document.getElementById('boxFindings').style.display = 'none';
+
+                if (vis.lab_tests) document.getElementById('vTests').innerText = vis.lab_tests;
+                else document.getElementById('boxTests').style.display = 'none';
+
+                // Medicines
+                const tbody = document.getElementById('medList');
+                const meds = vis.medicines || [];
+                if (meds.length > 0) {
+                    meds.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td>
+                            <span class="med-name">${m.name}</span>
+                            ${m.instr ? `<div class="med-instr">${m.instr}</div>` : ''}
+                        </td>
+                        <td><span class="med-dose">${m.dose || '-'}</span></td>
+                        <td>${m.freq || '-'}</td>
+                        <td>${m.dur || '-'}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#94a3b8;">No medicines prescribed</td></tr>';
+                }
+
+                // Advice
+                if (vis.advice) {
+                    document.getElementById('adviceSection').classList.remove('hidden');
+                    document.getElementById('vAdvice').innerText = vis.advice;
+                }
+
+                // Note
+                if (vis.note) {
+                    document.getElementById('noteSection').classList.remove('hidden');
+                    document.getElementById('vNote').innerText = vis.note;
+                }
+
+                // Follow Up
+                if (vis.follow_up_date) {
+                    document.getElementById('followSection').classList.remove('hidden');
+                    document.getElementById('vFollow').innerText = vis.follow_up_date.split('T')[0];
+                }
+
+            } else {
+                document.body.innerHTML = "<div style='padding:50px; text-align:center;'>No prescription data loaded.</div>";
+            }
+        } catch (e) {
+            console.error(e);
+            document.body.innerHTML = "<div style='padding:50px; text-align:center;'>Error loading prescription.</div>";
+        }
+    </script>
+</body>
+
+</html>

@@ -776,8 +776,7 @@
             <nav class="nav-section">
                 <div class="nav-label">Settings</div>
                 <ul class="nav-list">
-                    <li class="nav-item"><a href="settings.html"><i class="fa-solid fa-sliders"></i> Preferences</a>
-                    </li>
+
                     <li class="nav-item"><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i>
                             Logout</a></li>
                 </ul>
@@ -840,7 +839,6 @@
                         <select class="custom-select">
                             <option>All Status</option>
                             <option>Waiting</option>
-                            <option>Waiting</option>
                             <option>Completed</option>
                         </select>
 
@@ -865,6 +863,7 @@
                                 <th>Appt Time</th>
                                 <th>Demographics</th>
                                 <th>Vitals</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1244,7 +1243,23 @@
                         pulse: a.vital_pulse || '-',
                         spo2: a.vital_spo2 || '-',
                         temp: a.vital_temp || '-',
-                        complaints: a.symptoms || '—'
+                        complaints: a.symptoms || '—',
+                        // FULL DATA FOR PRINT
+                        clinical_findings: a.clinical_findings,
+                        diagnosis: a.diagnosis,
+                        advice: a.advice,
+                        note: a.note,
+                        lab_tests: a.lab_tests,
+                        doctor_name: a.doctor_name,
+                        appointment_date: a.appointment_date,
+                        follow_up_date: a.follow_up_date,
+                        medicines: (() => {
+                            try {
+                                if (!a.medicines) return [];
+                                if (typeof a.medicines === 'string') return JSON.parse(a.medicines);
+                                return a.medicines; // Already object
+                            } catch (e) { console.error("Rx Parse Error", e); return [] }
+                        })()
                     }));
                 } else {
                     patients = [];
@@ -1255,7 +1270,7 @@
             } catch (err) {
                 console.error("Failed to load patients", err);
                 if (queueStatus) queueStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i> Error';
-                patientTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red;padding:20px;">Connection failed</td></tr>`;
+                patientTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red;padding:20px;">Connection failed</td></tr>`;
             }
         }
 
@@ -1298,7 +1313,59 @@
                         <td style="font-size:12px; color:var(--text-muted);">
                              BP: ${p.bp} | SpO2: ${p.spo2}%
                         </td>
+                        <td>
+                            ${(p.status === 'Completed' || (p.status && p.status.startsWith('Modified'))) ?
+                            `<button class="btn-outline print-btn" style="padding:4px 8px; font-size:11px; background:white;" title="Print Prescription">
+                                <i class="fa-solid fa-print"></i> Print
+                             </button>` : ''}
+                        </td>
                     `;
+
+                    // Print Button Logic
+                    const printBtn = tr.querySelector('.print-btn');
+                    if (printBtn) {
+                        printBtn.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Prevent opening EMR
+                            const printData = {
+                                doctor: {
+                                    name: p.doctor_name,
+                                    degrees: currentDoctor.degrees || '',
+                                    reg_number: currentDoctor.reg_number || '',
+                                    specialization: currentDoctor.specialization || '',
+                                    department: currentDoctor.department || '',
+                                    phone: currentDoctor.ContactNumber || ''
+                                },
+                                patient: {
+                                    name: p.name,
+                                    age: p.age,
+                                    sex: p.sex,
+                                    phone: p.phone,
+                                    pat_num: p.pat_num,
+                                    id: p.pat_id
+                                },
+                                visit: {
+                                    date: p.appointment_date,
+                                    clinical_findings: p.clinical_findings,
+                                    diagnosis: p.diagnosis,
+                                    advice: p.advice,
+                                    note: p.note,
+                                    lab_tests: p.lab_tests,
+                                    medicines: p.medicines, // Already parsed array or empty
+                                    vitals: {
+                                        bp: p.bp,
+                                        pulse: p.pulse,
+                                        spo2: p.spo2,
+                                        temp: p.temp
+                                    },
+                                    symptoms: p.complaints,
+                                    follow_up_date: p.follow_up_date
+                                }
+                            };
+                            sessionStorage.setItem('print_prescription_data', JSON.stringify(printData));
+                            window.open('prescription_view.html', '_blank');
+                        });
+                    }
+
                     tr.addEventListener("click", () => selectPatient(p.id));
                     patientTableBody.appendChild(tr);
                 }
