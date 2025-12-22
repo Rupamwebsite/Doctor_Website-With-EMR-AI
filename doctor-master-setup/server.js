@@ -60,7 +60,8 @@ const dbPatient = mysql.createPool({ ...dbConfig, database: 'doctor_appoinment_d
         "ADD COLUMN medicines JSON",
         "ADD COLUMN lab_tests TEXT",
         "ADD COLUMN advice TEXT",
-        "ADD COLUMN follow_up_date DATE"
+        "ADD COLUMN follow_up_date DATE",
+        "ADD COLUMN appointment_type VARCHAR(20) DEFAULT 'Offline'"
     ];
     for (const col of columns) {
         try {
@@ -73,6 +74,8 @@ const dbPatient = mysql.createPool({ ...dbConfig, database: 'doctor_appoinment_d
         }
     }
 })();
+
+
 
 // ============================================================
 // 2. CONFIGURATION
@@ -627,6 +630,31 @@ appAdmin.patch('/api/admin/doctors/:id/status', async (req, res) => {
     try { await dbDoctor.promise().query('UPDATE doctors SET ActiveStatus=? WHERE DoctorID=?', [req.body.is_active, req.params.id]); res.json({ message: 'Updated' }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// API: Check eligibility for free follow-up
+appAdmin.post('/api/check-followup-eligibility', async (req, res) => {
+    try {
+        const { patient_phone, doctor_id } = req.body;
+        if (!patient_phone || !doctor_id) return res.status(400).json({ error: 'Missing phone or doctor_id' });
+
+        const [rows] = await dbPatient.promise().query(`
+            SELECT id, appointment_date, appointment_type 
+            FROM appointments 
+            WHERE patient_phone = ? 
+              AND doctor_id = ? 
+              AND appointment_type = 'Online'
+              AND appointment_date >= DATE_SUB(CURDATE(), INTERVAL 15 DAY)
+            ORDER BY appointment_date DESC 
+            LIMIT 1
+        `, [patient_phone, doctor_id]);
+
+        if (rows.length > 0) return res.json({ isFree: true, lastVisit: rows[0].appointment_date });
+        return res.json({ isFree: false });
+    } catch (e) {
+        console.error('Check eligibility error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Master Data
 appAdmin.get('/api/master/departments', async (req, res) => { try { const [r] = await dbDoctor.promise().query('SELECT * FROM departments'); res.json(r); } catch (e) { res.json([]) } });
 appAdmin.post('/api/master/departments', async (req, res) => { try { await dbDoctor.promise().query('INSERT INTO departments (name) VALUES (?)', [req.body.name]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }) } });
@@ -799,6 +827,7 @@ appPublic.post('/api/book-appointment', async (req, res) => {
             const generated_signature = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET)
                 .update(`${razorpay_order_id}|${razorpay_payment_id}`)
                 .digest('hex');
+
             if (generated_signature !== razorpay_signature) {
                 return res.status(400).json({ success: false, error: 'Invalid payment signature' });
             }
@@ -923,6 +952,32 @@ appPublic.post('/api/book-appointment', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- RECEPTION: Offline Booking API ---
+appPublic.post('/api/reception/book-appointment', async (req, res) => {
+    try {
+        const { doctor_id, doctor_name, patient_name, patient_phone, patient_age, patient_sex, patient_address, date, time, fees } = req.body;
+
+        if (!doctor_id || !patient_name || !date || !time) {
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
+        }
+
+        // Insert Appointment (Status: Confirmed, Payment: Cash)
+        const [result] = await dbPatient.promise().query(
+            `INSERT INTO appointments 
+            (doctor_id, doctor_name, patient_name, patient_phone, patient_age, patient_sex, patient_address, appointment_date, appointment_time, payment_method, payment_amount, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [doctor_id, doctor_name, patient_name, patient_phone, patient_age, patient_sex, patient_address, date, time, 'Cash', fees || 0, 'Confirmed']
+        );
+
+        res.json({ success: true, appointment_id: result.insertId, message: 'Booking Confirmed' });
+
+    } catch (e) {
+        console.error('Reception Booking Error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+
 // Get appointments for a patient (by email or phone)
 appPublic.get('/api/appointments', async (req, res) => {
     try {
@@ -996,8 +1051,14 @@ appPublic.get('/api/doctor/appointments', async (req, res) => {
                    CASE WHEN p.id IS NOT NULL THEN 'Completed' ELSE a.status END as status
             FROM appointments a
             LEFT JOIN prescriptions p ON a.id = p.appointment_id
-            WHERE a.doctor_id = ?`;
-        const p = [doctor_id];
+            WHERE 1=1`;
+
+        const p = [];
+        if (doctor_id !== 'all') {
+            q += ' AND a.doctor_id = ?';
+            p.push(doctor_id);
+        }
+
         if (startDate && endDate) {
             q += ' AND DATE(a.appointment_date) BETWEEN ? AND ?';
             p.push(startDate, endDate);

@@ -799,6 +799,15 @@
                             id="topSearchInput">
                     </div>
 
+
+                    <!-- SUPER ADMIN SELECTOR -->
+                    <div id="adminSelector" style="display:none; margin-right: 20px;">
+                        <select id="doctorSelect" class="custom-select"
+                            style="min-width: 250px; background: #fff; border: 2px solid var(--accent);">
+                            <option value="">-- Select Doctor --</option>
+                        </select>
+                    </div>
+
                     <div class="user-profile">
                         <div class="user-info">
                             <span class="user-name">Dr. Rupam M.</span>
@@ -1140,7 +1149,11 @@
 
             initTabs();
             initMedicines();
-            await loadPatients();
+
+            // Only load patients if we have a currentDoctor (Admin might not have selected one yet)
+            if (currentDoctor) {
+                await loadPatients();
+            }
         });
 
         // Toggle Views
@@ -1157,7 +1170,58 @@
         }
 
         // 1. Auth Check
-        function checkAuth() {
+        async function checkAuth() {
+            const adminUser = JSON.parse(localStorage.getItem('admin_user') || 'null');
+            const adminToken = localStorage.getItem('admin_token');
+
+            // SUPER ADMIN / ADMIN BYPASS
+            if (adminUser && adminToken) {
+                // Check Permissions
+                let perms = [];
+                try {
+                    perms = typeof adminUser.permissions === 'string' ? JSON.parse(adminUser.permissions) : (adminUser.permissions || []);
+                } catch(e) { perms = []; }
+                
+                const hasAccess = adminUser.role === 'Super Admin' || perms.includes('super_admin_emr');
+
+                if (hasAccess) {
+                    // Show Admin Selector
+                    document.getElementById('adminSelector').style.display = 'block';
+                    
+                    // Update Profile to Admin
+                    document.querySelector('.user-name').innerText = adminUser.name || adminUser.username || 'Admin';
+                    document.querySelector('.user-role').innerText = adminUser.role || 'Administrator';
+                    document.querySelector('.avatar').innerText = 'AD';
+
+                    // Load all doctors for dropdown
+                    await loadAllDoctors(adminToken);
+                    
+                    // Handle Doctor Selection
+                    document.getElementById('doctorSelect').addEventListener('change', (e) => {
+                        const docId = e.target.value;
+                        if(!docId) return;
+                        
+                        if (docId === 'all') {
+                            currentDoctor = { id: 'all', first_name: 'All', last_name: 'Doctors', specialization: 'Super Admin View' };
+                            toast('Viewing All Doctors');
+                            loadPatients();
+                            return;
+                        }
+
+                        const doc = allDoctorsList.find(d => d.id == docId);
+                        if(doc) {
+                            currentDoctor = doc;
+                            // Update UI to show we are viewing this doctor
+                            toast(`Viewing as Dr. ${doc.first_name}`);
+                            loadPatients(); // Reload queue for this doctor
+                        }
+                    });
+
+                    return true; 
+                }
+            }
+
+            // NORMAL DOCTOR LOGIN
             const token = sessionStorage.getItem('doctor_token');
             const info = sessionStorage.getItem('doctor_info');
             if (!token || !info) {
@@ -1176,9 +1240,54 @@
         function logout() {
             sessionStorage.removeItem('doctor_token');
             sessionStorage.removeItem('doctor_info');
-            localStorage.removeItem('doctor_token');
-            localStorage.removeItem('doctor_info');
-            location.href = '/doctor_login';
+
+            // If Admin, go back to modules
+            if (localStorage.getItem('admin_token')) {
+                location.href = '/modules.html';
+            } else {
+                localStorage.removeItem('doctor_token');
+                localStorage.removeItem('doctor_info');
+                location.href = '/doctor_login';
+            }
+        }
+
+
+        // Toast Helper
+        function toast(msg) {
+            const t = document.createElement('div');
+            t.style = "position:fixed; bottom:20px; right:20px; background:#333; color:white; padding:10px 20px; border-radius:8px; z-index:9999; animation: fadein 0.5s;";
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        let allDoctorsList = [];
+        async function loadAllDoctors(token) {
+            try {
+                const res = await fetch('/api/admin/doctors', {
+                    headers: { 'x-admin-key': token }
+                });
+                const data = await res.json();
+                if (data.doctors) {
+                    allDoctorsList = data.doctors;
+                    const sel = document.getElementById('doctorSelect');
+                    sel.innerHTML = '<option value="">-- Select Doctor to View --</option>' +
+                        '<option value="all" style="font-weight:bold; color:var(--accent);">All Doctors</option>' +
+                        allDoctorsList.map(d => `<option value="${d.id}">Dr. ${d.first_name} ${d.last_name || ''} (${d.department})</option>`).join('');
+
+                    // Auto-select first active doctor if available
+                    const firstActive = allDoctorsList.find(d => d.is_active);
+                    if (firstActive) {
+                        sel.value = firstActive.id;
+                        currentDoctor = firstActive;
+                        // Trigger load
+                        loadPatients();
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load doctors for admin", e);
+                alert("Failed to load doctor list for admin view.");
+            }
         }
 
         // 2. Tabs Logic

@@ -360,7 +360,7 @@
                     sessionStorage.setItem('doctor_token', 'local_token_' + Date.now());
                     sessionStorage.setItem('doctor_info', JSON.stringify(docInfo));
                     msg.className = 'msg success'; msg.innerText = 'Login successful...'; msg.style.display = 'block';
-                    setTimeout(() => { location.href = '/doctor_dashboard/doctor_dashboard.html'; }, 700);
+                    setTimeout(() => { location.href = '/modules.html'; }, 700);
                     return;
                 }
             } catch (err) { console.error('Local login check failed', err); }
@@ -391,9 +391,9 @@
 
                     setTimeout(() => {
                         if (role === 'doctor' || role.includes('doctor')) {
-                            location.href = '/doctor_dashboard/doctor_dashboard.html';
+                            location.href = '/modules.html';
                         } else {
-                            location.href = '/doctors-master.html';
+                            location.href = '/modules.html';
                         }
                     }, 800);
                 }
