@@ -10,7 +10,7 @@ const fs = require('fs');
 const app = express();
 const PORT = 3000;
 
-// --- মিডলওয়্যার কনফিগারেশন ---
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,7 +32,7 @@ if (!fs.existsSync(uploadDir)) {
 app.use('/uploads', express.static(uploadDir));
 
 
-// --- ডাটাবেস কানেকশন ---
+
 const db = mysql.createPool({
     host: 'localhost',
     user: 'root',
@@ -53,16 +53,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-// ============================================================
-// 🚀 API রাউটস (Routes)
-// ============================================================
 
-// ১. লগইন (Login)
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        // ক) অ্যাডমিন লগইন চেক
-        // ...
+      
         if (email === 'admin@hospital.com' && password === 'admin123') {
             return res.status(200).json({
                 success: true,
@@ -73,7 +68,7 @@ app.post('/login', async (req, res) => {
         }
         // ...
 
-        // খ) পেশেন্ট লগইন চেক
+     
         const [users] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
         if (users.length === 0) return res.status(401).json({ success: false, message: 'User not found' });
 
@@ -92,7 +87,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// ২. রেজিস্ট্রেশন (Registration)
+
 app.post('/register', async (req, res) => {
     const { full_name, email, password } = req.body;
     try {
@@ -105,13 +100,13 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// ৩. ডাক্তারদের লিস্ট API (পেশেন্ট ড্যাশবোর্ড ও অ্যাডমিন প্যানেলে দেখানোর জন্য)
+)
 app.get('/api/doctors', async (req, res) => {
     const { active, specialization } = req.query;
     let query = 'SELECT * FROM doctors';
     let conditions = [];
 
-    // ফিল্টারিং
+িং
     if (active) conditions.push(`is_active = ${active === '1'}`);
     if (specialization) conditions.push(`specialization LIKE '%${specialization}%'`);
 
@@ -123,7 +118,7 @@ app.get('/api/doctors', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ৪. নির্দিষ্ট ডাক্তার খোঁজা (ID দিয়ে)
+
 app.get('/api/doctors/:id', async (req, res) => {
     try {
         const [rows] = await db.promise().query('SELECT * FROM doctors WHERE id = ?', [req.params.id]);
